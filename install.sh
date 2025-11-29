@@ -6,6 +6,7 @@
 # Options:
 #   --organize, -o    Organize existing files before installing
 #   --auto, -y        Non-interactive mode (auto-accept)
+#   --upgrade, -u     Upgrade existing installation (overwrite protocol files)
 
 set -e
 
@@ -26,6 +27,7 @@ echo ""
 # Parse arguments
 ORGANIZE_FILES=false
 AUTO_MODE=false
+UPGRADE_MODE=false
 for arg in "$@"; do
     case $arg in
         --organize|-o)
@@ -34,8 +36,18 @@ for arg in "$@"; do
         --auto|-y)
             AUTO_MODE=true
             ;;
+        --upgrade|-u)
+            UPGRADE_MODE=true
+            AUTO_MODE=true  # Upgrade implies auto
+            ;;
     esac
 done
+
+# Show upgrade mode
+if [ "$UPGRADE_MODE" = true ]; then
+    echo -e "${YELLOW}🔄 UPGRADE MODE: Protocol files will be overwritten${NC}"
+    echo ""
+fi
 
 # Function to organize existing files
 organize_existing_files() {
@@ -137,20 +149,40 @@ echo -e "${CYAN}📦 Installing protocol files...${NC}"
 # Copy directories
 for dir in .ai .github scripts; do
     if [ -d "$TEMP_DIR/$dir" ]; then
-        cp -rn "$TEMP_DIR/$dir" . 2>/dev/null || cp -r "$TEMP_DIR/$dir" .
-        echo -e "  ${GREEN}✓ $dir/${NC}"
+        if [ "$UPGRADE_MODE" = true ]; then
+            cp -rf "$TEMP_DIR/$dir" .
+            echo -e "  ${GREEN}✓ $dir/ (upgraded)${NC}"
+        else
+            cp -rn "$TEMP_DIR/$dir" . 2>/dev/null || cp -r "$TEMP_DIR/$dir" .
+            echo -e "  ${GREEN}✓ $dir/${NC}"
+        fi
     fi
 done
 
-# Copy config files (only if they don't exist)
-for file in .cursorrules .windsurfrules .gitignore AGENTS.md .git-core-protocol-version; do
-    if [ -f "$TEMP_DIR/$file" ] && [ ! -f "$file" ]; then
-        cp "$TEMP_DIR/$file" .
-        echo -e "  ${GREEN}✓ $file${NC}"
-    elif [ -f "$file" ]; then
-        echo -e "  ${YELLOW}~ $file (exists, not overwritten)${NC}"
+# Protocol files (always overwrite in upgrade mode)
+PROTOCOL_FILES=".cursorrules .windsurfrules AGENTS.md .git-core-protocol-version"
+
+for file in $PROTOCOL_FILES; do
+    if [ -f "$TEMP_DIR/$file" ]; then
+        if [ "$UPGRADE_MODE" = true ]; then
+            cp "$TEMP_DIR/$file" .
+            echo -e "  ${GREEN}✓ $file (upgraded)${NC}"
+        elif [ ! -f "$file" ]; then
+            cp "$TEMP_DIR/$file" .
+            echo -e "  ${GREEN}✓ $file${NC}"
+        else
+            echo -e "  ${YELLOW}~ $file (exists, not overwritten)${NC}"
+        fi
     fi
 done
+
+# .gitignore - never overwrite (project-specific)
+if [ -f "$TEMP_DIR/.gitignore" ] && [ ! -f ".gitignore" ]; then
+    cp "$TEMP_DIR/.gitignore" .
+    echo -e "  ${GREEN}✓ .gitignore${NC}"
+elif [ -f ".gitignore" ]; then
+    echo -e "  ${YELLOW}~ .gitignore (exists, not overwritten)${NC}"
+fi
 
 # Copy README only if it doesn't exist
 if [ ! -f "README.md" ]; then
@@ -186,5 +218,6 @@ echo ""
 echo -e "${CYAN}🔄 To check for updates later:${NC}"
 echo "   ./scripts/check-protocol-update.sh --update"
 echo ""
-echo -e "${CYAN}💡 Tip for AI Agents: Use --auto for non-interactive mode${NC}"
-echo -e "${CYAN}   curl -sL .../install.sh | bash -s -- --auto --organize${NC}"
+echo -e "${CYAN}💡 Tips:${NC}"
+echo -e "${CYAN}   New install:  curl -sL .../install.sh | bash -s -- --auto --organize${NC}"
+echo -e "${CYAN}   Upgrade:      curl -sL .../install.sh | bash -s -- --upgrade${NC}"

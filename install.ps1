@@ -4,6 +4,7 @@
 # Or with parameters:
 #   $env:GIT_CORE_ORGANIZE = "1"; irm .../install.ps1 | iex
 #   $env:GIT_CORE_AUTO = "1"; irm .../install.ps1 | iex
+#   $env:GIT_CORE_UPGRADE = "1"; irm .../install.ps1 | iex
 #
 # 🎯 This script can be executed by AI agents to bootstrap any project with Git-Core Protocol
 
@@ -19,6 +20,14 @@ Write-Host ""
 # Check for environment variable flags
 $OrganizeFiles = $env:GIT_CORE_ORGANIZE -eq "1"
 $AutoMode = $env:GIT_CORE_AUTO -eq "1"
+$UpgradeMode = $env:GIT_CORE_UPGRADE -eq "1"
+
+# Upgrade implies auto
+if ($UpgradeMode) {
+    $AutoMode = $true
+    Write-Host "🔄 UPGRADE MODE: Protocol files will be overwritten" -ForegroundColor Yellow
+    Write-Host ""
+}
 
 # Function to organize existing files
 function Invoke-OrganizeFiles {
@@ -109,24 +118,42 @@ Write-Host "📦 Installing protocol files..." -ForegroundColor Cyan
 $dirs = @(".ai", ".github", "scripts")
 foreach ($dir in $dirs) {
     if (Test-Path "$TEMP_DIR/$dir") {
-        if (-not (Test-Path $dir)) {
+        if ($UpgradeMode -or -not (Test-Path $dir)) {
+            if (Test-Path $dir) {
+                Remove-Item -Recurse -Force $dir -ErrorAction SilentlyContinue
+            }
             Copy-Item -Recurse "$TEMP_DIR/$dir" .
+            $suffix = if ($UpgradeMode) { " (upgraded)" } else { "" }
+            Write-Host "  ✓ $dir/$suffix" -ForegroundColor Green
         } else {
             Copy-Item -Recurse -Force "$TEMP_DIR/$dir/*" $dir
+            Write-Host "  ✓ $dir/" -ForegroundColor Green
         }
-        Write-Host "  ✓ $dir/" -ForegroundColor Green
     }
 }
 
-# Copy config files (only if they don't exist)
-$configFiles = @(".cursorrules", ".windsurfrules", ".gitignore", "AGENTS.md", ".git-core-protocol-version")
-foreach ($file in $configFiles) {
-    if ((Test-Path "$TEMP_DIR/$file") -and -not (Test-Path $file)) {
-        Copy-Item "$TEMP_DIR/$file" .
-        Write-Host "  ✓ $file" -ForegroundColor Green
-    } elseif (Test-Path $file) {
-        Write-Host "  ~ $file (exists, not overwritten)" -ForegroundColor Yellow
+# Protocol files (always overwrite in upgrade mode)
+$protocolFiles = @(".cursorrules", ".windsurfrules", "AGENTS.md", ".git-core-protocol-version")
+foreach ($file in $protocolFiles) {
+    if (Test-Path "$TEMP_DIR/$file") {
+        if ($UpgradeMode) {
+            Copy-Item -Force "$TEMP_DIR/$file" .
+            Write-Host "  ✓ $file (upgraded)" -ForegroundColor Green
+        } elseif (-not (Test-Path $file)) {
+            Copy-Item "$TEMP_DIR/$file" .
+            Write-Host "  ✓ $file" -ForegroundColor Green
+        } else {
+            Write-Host "  ~ $file (exists, not overwritten)" -ForegroundColor Yellow
+        }
     }
+}
+
+# .gitignore - never overwrite (project-specific)
+if ((Test-Path "$TEMP_DIR/.gitignore") -and -not (Test-Path ".gitignore")) {
+    Copy-Item "$TEMP_DIR/.gitignore" .
+    Write-Host "  ✓ .gitignore" -ForegroundColor Green
+} elseif (Test-Path ".gitignore") {
+    Write-Host "  ~ .gitignore (exists, not overwritten)" -ForegroundColor Yellow
 }
 
 # Copy README only if it doesn't exist
@@ -160,5 +187,6 @@ Write-Host ""
 Write-Host "🔄 To check for updates later:" -ForegroundColor Cyan
 Write-Host "   .\scripts\check-protocol-update.ps1 -Update"
 Write-Host ""
-Write-Host "💡 Tip for AI Agents: Use environment variables for non-interactive mode" -ForegroundColor Cyan
-Write-Host '   $env:GIT_CORE_AUTO = "1"; $env:GIT_CORE_ORGANIZE = "1"' -ForegroundColor Cyan
+Write-Host "💡 Tips:" -ForegroundColor Cyan
+Write-Host '   New install:  $env:GIT_CORE_AUTO = "1"; irm .../install.ps1 | iex' -ForegroundColor Cyan
+Write-Host '   Upgrade:      $env:GIT_CORE_UPGRADE = "1"; irm .../install.ps1 | iex' -ForegroundColor Cyan
