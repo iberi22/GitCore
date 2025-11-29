@@ -22,7 +22,7 @@ $AutoMode = $env:GIT_CORE_AUTO -eq "1"
 
 # Function to organize existing files
 function Invoke-OrganizeFiles {
-    Write-Host "📂 Organizando archivos existentes..." -ForegroundColor Yellow
+    Write-Host "📂 Organizing existing files..." -ForegroundColor Yellow
 
     # Create directories
     $dirs = @("docs/archive", "scripts", "tests", "src")
@@ -37,9 +37,9 @@ function Invoke-OrganizeFiles {
     Get-ChildItem -Filter "*.md" -File -ErrorAction SilentlyContinue | ForEach-Object {
         if ($_.Name -notin $keepInRoot) {
             Move-Item $_.FullName -Destination "docs/archive/" -Force -ErrorAction SilentlyContinue
-            Write-Host "  → $($_.Name) movido a docs/archive/" -ForegroundColor Cyan
+            Write-Host "  → $($_.Name) moved to docs/archive/" -ForegroundColor Cyan
         } else {
-            Write-Host "  ✓ Manteniendo $($_.Name) en root" -ForegroundColor Green
+            Write-Host "  ✓ Keeping $($_.Name) in root" -ForegroundColor Green
         }
     }
 
@@ -48,7 +48,7 @@ function Invoke-OrganizeFiles {
     foreach ($pattern in $testPatterns) {
         Get-ChildItem -Filter $pattern -File -ErrorAction SilentlyContinue | ForEach-Object {
             Move-Item $_.FullName -Destination "tests/" -Force -ErrorAction SilentlyContinue
-            Write-Host "  → $($_.Name) movido a tests/" -ForegroundColor Cyan
+            Write-Host "  → $($_.Name) moved to tests/" -ForegroundColor Cyan
         }
     }
 
@@ -56,11 +56,11 @@ function Invoke-OrganizeFiles {
     Get-ChildItem -Filter "*.bat" -File -ErrorAction SilentlyContinue | ForEach-Object {
         if ($_.DirectoryName -eq (Get-Location).Path) {
             Move-Item $_.FullName -Destination "scripts/" -Force -ErrorAction SilentlyContinue
-            Write-Host "  → $($_.Name) movido a scripts/" -ForegroundColor Cyan
+            Write-Host "  → $($_.Name) moved to scripts/" -ForegroundColor Cyan
         }
     }
 
-    Write-Host "✅ Archivos organizados" -ForegroundColor Green
+    Write-Host "✅ Files organized" -ForegroundColor Green
 }
 
 # Check if should organize
@@ -72,30 +72,30 @@ if ($OrganizeFiles) {
 $hasFiles = (Get-ChildItem -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -notlike ".*" } | Measure-Object).Count -gt 0
 
 if ($hasFiles -and -not $AutoMode) {
-    Write-Host "⚠️  El directorio actual no está vacío." -ForegroundColor Yellow
+    Write-Host "⚠️  Current directory is not empty." -ForegroundColor Yellow
     Write-Host ""
-    Write-Host "Opciones:"
-    Write-Host "  1) Continuar y mezclar archivos"
-    Write-Host "  2) Organizar archivos existentes primero (mover .md a docs/archive/)"
-    Write-Host "  3) Cancelar"
+    Write-Host "Options:"
+    Write-Host "  1) Continue and merge files"
+    Write-Host "  2) Organize existing files first (move .md to docs/archive/)"
+    Write-Host "  3) Cancel"
     Write-Host ""
-    $choice = Read-Host "Selecciona (1/2/3)"
+    $choice = Read-Host "Select (1/2/3)"
 
     switch ($choice) {
-        "1" { Write-Host "Continuando..." }
+        "1" { Write-Host "Continuing..." }
         "2" { Invoke-OrganizeFiles }
-        "3" { Write-Host "Cancelado."; exit 0 }
-        default { Write-Host "Opción inválida."; exit 1 }
+        "3" { Write-Host "Cancelled."; exit 0 }
+        default { Write-Host "Invalid option."; exit 1 }
     }
 }
 
 # Download template
-Write-Host "`n📥 Descargando Git-Core Protocol template..." -ForegroundColor Cyan
+Write-Host "`n📥 Downloading Git-Core Protocol template..." -ForegroundColor Cyan
 
 try {
     git clone --depth 1 $REPO_URL $TEMP_DIR 2>$null
 } catch {
-    Write-Host "❌ Error al clonar el repositorio" -ForegroundColor Red
+    Write-Host "❌ Error cloning repository" -ForegroundColor Red
     exit 1
 }
 
@@ -103,7 +103,7 @@ try {
 Remove-Item -Recurse -Force "$TEMP_DIR/.git" -ErrorAction SilentlyContinue
 
 # Copy files
-Write-Host "📦 Instalando archivos del protocolo..." -ForegroundColor Cyan
+Write-Host "📦 Installing protocol files..." -ForegroundColor Cyan
 
 # Copy directories
 $dirs = @(".ai", ".github", "scripts")
@@ -119,13 +119,13 @@ foreach ($dir in $dirs) {
 }
 
 # Copy config files (only if they don't exist)
-$configFiles = @(".cursorrules", ".windsurfrules", ".gitignore", "AGENTS.md")
+$configFiles = @(".cursorrules", ".windsurfrules", ".gitignore", "AGENTS.md", ".git-core-protocol-version")
 foreach ($file in $configFiles) {
     if ((Test-Path "$TEMP_DIR/$file") -and -not (Test-Path $file)) {
         Copy-Item "$TEMP_DIR/$file" .
         Write-Host "  ✓ $file" -ForegroundColor Green
     } elseif (Test-Path $file) {
-        Write-Host "  ~ $file (ya existe, no sobrescrito)" -ForegroundColor Yellow
+        Write-Host "  ~ $file (exists, not overwritten)" -ForegroundColor Yellow
     }
 }
 
@@ -134,7 +134,7 @@ if (-not (Test-Path "README.md")) {
     Copy-Item "$TEMP_DIR/README.md" .
     Write-Host "  ✓ README.md" -ForegroundColor Green
 } else {
-    Write-Host "  ~ README.md (ya existe, no sobrescrito)" -ForegroundColor Yellow
+    Write-Host "  ~ README.md (exists, not overwritten)" -ForegroundColor Yellow
 }
 
 # Cleanup
@@ -142,20 +142,23 @@ Remove-Item -Recurse -Force $TEMP_DIR -ErrorAction SilentlyContinue
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Green
-Write-Host "✅ Git-Core Protocol instalado" -ForegroundColor Green
+Write-Host "✅ Git-Core Protocol installed" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Green
 Write-Host ""
-Write-Host "📋 Archivos instalados:"
-Write-Host "   .ai/ARCHITECTURE.md    - Documenta tu arquitectura aquí"
-Write-Host "   .ai/CONTEXT_LOG.md     - Notas de sesión (efímeras)"
-Write-Host "   .github/               - Copilot rules + Issue templates"
-Write-Host "   scripts/               - Scripts de inicialización"
-Write-Host "   AGENTS.md              - Reglas para todos los AI agents"
-Write-Host "   .cursorrules           - Reglas para Cursor"
-Write-Host "   .windsurfrules         - Reglas para Windsurf"
+Write-Host "📋 Files installed:"
+Write-Host "   .ai/ARCHITECTURE.md    - Document your architecture here"
+Write-Host "   .github/               - Copilot rules + workflows + templates"
+Write-Host "   scripts/               - Init and update scripts"
+Write-Host "   AGENTS.md              - Rules for all AI agents"
+Write-Host "   .cursorrules           - Rules for Cursor"
+Write-Host "   .windsurfrules         - Rules for Windsurf"
+Write-Host "   .git-core-protocol-version - Protocol version (for auto-updates)"
 Write-Host ""
-Write-Host "🚀 Siguiente paso:" -ForegroundColor Yellow
+Write-Host "🚀 Next step:" -ForegroundColor Yellow
 Write-Host "   .\scripts\init_project.ps1"
 Write-Host ""
-Write-Host "💡 Tip para AI Agents: Usa variables de entorno para modo no-interactivo" -ForegroundColor Cyan
+Write-Host "🔄 To check for updates later:" -ForegroundColor Cyan
+Write-Host "   .\scripts\check-protocol-update.ps1 -Update"
+Write-Host ""
+Write-Host "💡 Tip for AI Agents: Use environment variables for non-interactive mode" -ForegroundColor Cyan
 Write-Host '   $env:GIT_CORE_AUTO = "1"; $env:GIT_CORE_ORGANIZE = "1"' -ForegroundColor Cyan

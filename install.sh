@@ -39,7 +39,7 @@ done
 
 # Function to organize existing files
 organize_existing_files() {
-    echo -e "${YELLOW}📂 Organizando archivos existentes...${NC}"
+    echo -e "${YELLOW}📂 Organizing existing files...${NC}"
 
     # Create necessary directories
     mkdir -p docs/archive scripts tests src
@@ -49,11 +49,11 @@ organize_existing_files() {
         if [ -f "$file" ]; then
             case "$file" in
                 README.md|AGENTS.md|CHANGELOG.md|CONTRIBUTING.md|LICENSE.md)
-                    echo -e "  ${GREEN}✓ Manteniendo $file en root${NC}"
+                    echo -e "  ${GREEN}✓ Keeping $file in root${NC}"
                     ;;
                 *)
                     mv "$file" "docs/archive/" 2>/dev/null && \
-                    echo -e "  ${CYAN}→ $file movido a docs/archive/${NC}" || true
+                    echo -e "  ${CYAN}→ $file moved to docs/archive/${NC}" || true
                     ;;
             esac
         fi
@@ -64,7 +64,7 @@ organize_existing_files() {
         for file in $pattern; do
             if [ -f "$file" ] && [ "$file" != "$pattern" ]; then
                 mv "$file" "tests/" 2>/dev/null && \
-                echo -e "  ${CYAN}→ $file movido a tests/${NC}" || true
+                echo -e "  ${CYAN}→ $file moved to tests/${NC}" || true
             fi
         done
     done
@@ -74,17 +74,17 @@ organize_existing_files() {
         if [ -f "$file" ] && [ "$file" != "$pattern" ]; then
             case "$file" in
                 install.sh)
-                    echo -e "  ${GREEN}✓ Manteniendo $file en root${NC}"
+                    echo -e "  ${GREEN}✓ Keeping $file in root${NC}"
                     ;;
                 *)
                     mv "$file" "scripts/" 2>/dev/null && \
-                    echo -e "  ${CYAN}→ $file movido a scripts/${NC}" || true
+                    echo -e "  ${CYAN}→ $file moved to scripts/${NC}" || true
                     ;;
             esac
         fi
     done
 
-    echo -e "${GREEN}✅ Archivos organizados${NC}"
+    echo -e "${GREEN}✅ Files organized${NC}"
 }
 
 # Check if we should auto-organize
@@ -94,37 +94,37 @@ fi
 
 # Check if current directory has files
 if [ "$(ls -A 2>/dev/null | grep -v '^\.' | head -1)" ] && [ "$AUTO_MODE" = false ]; then
-    echo -e "${YELLOW}⚠️  El directorio actual no está vacío.${NC}"
+    echo -e "${YELLOW}⚠️  Current directory is not empty.${NC}"
     echo ""
-    echo "Opciones:"
-    echo "  1) Continuar y mezclar archivos"
-    echo "  2) Organizar archivos existentes primero (mover .md a docs/archive/)"
-    echo "  3) Cancelar"
+    echo "Options:"
+    echo "  1) Continue and merge files"
+    echo "  2) Organize existing files first (move .md to docs/archive/)"
+    echo "  3) Cancel"
     echo ""
-    read -p "Selecciona (1/2/3): " CHOICE
+    read -p "Select (1/2/3): " CHOICE
 
     case $CHOICE in
         1)
-            echo "Continuando..."
+            echo "Continuing..."
             ;;
         2)
             organize_existing_files
             ;;
         3)
-            echo "Cancelado."
+            echo "Cancelled."
             exit 0
             ;;
         *)
-            echo "Opción inválida. Cancelando."
+            echo "Invalid option. Cancelling."
             exit 1
             ;;
     esac
 fi
 
 # Download template
-echo -e "\n${CYAN}📥 Descargando Git-Core Protocol template...${NC}"
+echo -e "\n${CYAN}📥 Downloading Git-Core Protocol template...${NC}"
 git clone --depth 1 "$REPO_URL" "$TEMP_DIR" 2>/dev/null || {
-    echo -e "${RED}❌ Error al clonar el repositorio${NC}"
+    echo -e "${RED}❌ Error cloning repository${NC}"
     exit 1
 }
 
@@ -132,7 +132,7 @@ git clone --depth 1 "$REPO_URL" "$TEMP_DIR" 2>/dev/null || {
 rm -rf "$TEMP_DIR/.git"
 
 # Move template files (don't overwrite existing)
-echo -e "${CYAN}📦 Instalando archivos del protocolo...${NC}"
+echo -e "${CYAN}📦 Installing protocol files...${NC}"
 
 # Copy directories
 for dir in .ai .github scripts; do
@@ -143,12 +143,12 @@ for dir in .ai .github scripts; do
 done
 
 # Copy config files (only if they don't exist)
-for file in .cursorrules .windsurfrules .gitignore AGENTS.md; do
+for file in .cursorrules .windsurfrules .gitignore AGENTS.md .git-core-protocol-version; do
     if [ -f "$TEMP_DIR/$file" ] && [ ! -f "$file" ]; then
         cp "$TEMP_DIR/$file" .
         echo -e "  ${GREEN}✓ $file${NC}"
     elif [ -f "$file" ]; then
-        echo -e "  ${YELLOW}~ $file (ya existe, no sobrescrito)${NC}"
+        echo -e "  ${YELLOW}~ $file (exists, not overwritten)${NC}"
     fi
 done
 
@@ -157,7 +157,7 @@ if [ ! -f "README.md" ]; then
     cp "$TEMP_DIR/README.md" .
     echo -e "  ${GREEN}✓ README.md${NC}"
 else
-    echo -e "  ${YELLOW}~ README.md (ya existe, no sobrescrito)${NC}"
+    echo -e "  ${YELLOW}~ README.md (exists, not overwritten)${NC}"
 fi
 
 # Cleanup temp
@@ -168,20 +168,23 @@ chmod +x scripts/*.sh 2>/dev/null || true
 
 echo ""
 echo -e "${GREEN}========================================${NC}"
-echo -e "${GREEN}✅ Git-Core Protocol instalado${NC}"
+echo -e "${GREEN}✅ Git-Core Protocol installed${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo ""
-echo "📋 Archivos instalados:"
-echo "   .ai/ARCHITECTURE.md    - Documenta tu arquitectura aquí"
-echo "   .ai/CONTEXT_LOG.md     - Notas de sesión (efímeras)"
-echo "   .github/               - Copilot rules + Issue templates"
-echo "   scripts/               - Scripts de inicialización"
-echo "   AGENTS.md              - Reglas para todos los AI agents"
-echo "   .cursorrules           - Reglas para Cursor"
-echo "   .windsurfrules         - Reglas para Windsurf"
+echo "📋 Files installed:"
+echo "   .ai/ARCHITECTURE.md    - Document your architecture here"
+echo "   .github/               - Copilot rules + workflows + templates"
+echo "   scripts/               - Init and update scripts"
+echo "   AGENTS.md              - Rules for all AI agents"
+echo "   .cursorrules           - Rules for Cursor"
+echo "   .windsurfrules         - Rules for Windsurf"
+echo "   .git-core-protocol-version - Protocol version (for auto-updates)"
 echo ""
-echo -e "${YELLOW}🚀 Siguiente paso:${NC}"
+echo -e "${YELLOW}🚀 Next step:${NC}"
 echo "   ./scripts/init_project.sh"
 echo ""
-echo -e "${CYAN}💡 Tip para AI Agents: Usa --auto para modo no-interactivo${NC}"
+echo -e "${CYAN}🔄 To check for updates later:${NC}"
+echo "   ./scripts/check-protocol-update.sh --update"
+echo ""
+echo -e "${CYAN}💡 Tip for AI Agents: Use --auto for non-interactive mode${NC}"
 echo -e "${CYAN}   curl -sL .../install.sh | bash -s -- --auto --organize${NC}"
