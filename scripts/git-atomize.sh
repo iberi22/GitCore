@@ -72,6 +72,18 @@ for arg in "$@"; do
     esac
 done
 
+# JSON string escape function
+json_escape() {
+    local str="$1"
+    # Escape backslash first, then other special characters
+    str="${str//\\/\\\\}"
+    str="${str//\"/\\\"}"
+    str="${str//$'\n'/\\n}"
+    str="${str//$'\r'/\\r}"
+    str="${str//$'\t'/\\t}"
+    echo -n "$str"
+}
+
 # Get staged files
 get_staged_files() {
     git diff --cached --name-only 2>/dev/null
@@ -193,10 +205,6 @@ get_file_group() {
                     return
                     ;;
             esac
-            ;;
-        test.js|test.ts|test.jsx|test.tsx|spec.js|spec.ts|spec.jsx|spec.tsx)
-            echo "test:tests"
-            return
             ;;
         css|scss|sass|less)
             echo "style:styles"
@@ -433,7 +441,12 @@ analyze_staged_files() {
             fi
             first=false
             
-            echo -n '{"group": "'"$group"'", "file_count": '"$count"', "commit_message": "'"$commit_msg"'", "files": ['
+            # Use json_escape for safe string output
+            local escaped_group escaped_commit_msg
+            escaped_group=$(json_escape "$group")
+            escaped_commit_msg=$(json_escape "$commit_msg")
+            
+            echo -n '{"group": "'"$escaped_group"'", "file_count": '"$count"', "commit_message": "'"$escaped_commit_msg"'", "files": ['
             local first_file=true
             for f in "${files_array[@]}"; do
                 [[ -z "$f" ]] && continue
@@ -441,7 +454,9 @@ analyze_staged_files() {
                     echo -n ","
                 fi
                 first_file=false
-                echo -n '"'"$f"'"'
+                local escaped_file
+                escaped_file=$(json_escape "$f")
+                echo -n '"'"$escaped_file"'"'
             done
             echo -n ']}'
         done

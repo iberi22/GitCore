@@ -197,7 +197,11 @@ function Invoke-Analysis {
     
     if (-not $stagedFiles -or $stagedFiles.Count -eq 0) {
         if ($CI) {
-            Write-Output '{"error": "No staged files found", "groups": []}'
+            $errorOutput = @{
+                error = "No staged files found"
+                groups = @()
+            }
+            Write-Output ($errorOutput | ConvertTo-Json -Compress)
         } else {
             Write-Host "⚠️  No staged files found." -ForegroundColor Yellow
             Write-Host "Stage files first with: git add <files>"
@@ -231,7 +235,12 @@ function Invoke-Analysis {
     # Check for mixed concerns in strict mode
     if ($Strict -and $groupCount -gt 1) {
         if ($CI) {
-            Write-Output "{`"error`": `"Mixed concerns detected`", `"group_count`": $groupCount, `"groups`": []}"
+            $errorOutput = @{
+                error = "Mixed concerns detected"
+                group_count = $groupCount
+                groups = @()
+            }
+            Write-Output ($errorOutput | ConvertTo-Json -Compress)
         } else {
             Write-Host "❌ STRICT MODE: Mixed concerns detected!" -ForegroundColor Red
             Write-Host "Found $groupCount different concern groups in staged files." -ForegroundColor Yellow
