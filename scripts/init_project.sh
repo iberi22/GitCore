@@ -121,7 +121,7 @@ fi
 if [ "$CODEX_INSTALLED" = false ]; then
     echo -e "${YELLOW}ℹ️  Codex CLI not found (optional)${NC}"
     echo -e "   Codex CLI enables AI-powered code reviews and analysis"
-    
+
     # Check if npm is available
     if command -v npm &> /dev/null; then
         if [ "$AUTO_MODE" = true ]; then
@@ -129,7 +129,7 @@ if [ "$CODEX_INSTALLED" = false ]; then
         else
             read -p "   Install Codex CLI now? (y/N): " INSTALL_CODEX
         fi
-        
+
         if [[ "$INSTALL_CODEX" =~ ^[Yy]$ ]]; then
             echo -e "   ${CYAN}Installing Codex CLI...${NC}"
             npm i -g @openai/codex

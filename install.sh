@@ -1,33 +1,38 @@
 #!/bin/bash
 # install.sh - Remote installer for Git-Core Protocol
-# Usage: curl -sL https://raw.githubusercontent.com/iberi22/ai-git-core-template/main/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/iberi22/Git-Core-Protocol/main/install.sh | bash
 #
 # 🎯 This script can be executed by AI agents to bootstrap any project with Git-Core Protocol
 # Options:
 #   --organize, -o    Organize existing files before installing
 #   --auto, -y        Non-interactive mode (auto-accept)
-#   --upgrade, -u     Upgrade existing installation (overwrite protocol files)
+#   --upgrade, -u     Upgrade existing installation (PRESERVES ARCHITECTURE.md)
+#   --force, -f       Force upgrade (overwrites EVERYTHING including ARCHITECTURE.md)
 
 set -e
 
-REPO_URL="https://github.com/iberi22/ai-git-core-template"
+REPO_URL="https://github.com/iberi22/Git-Core-Protocol"
+RAW_URL="https://raw.githubusercontent.com/iberi22/Git-Core-Protocol/main"
 TEMP_DIR=".git-core-temp"
+BACKUP_DIR=".git-core-backup"
 
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
+BLUE='\033[0;34m'
 NC='\033[0m'
 
-echo -e "${CYAN}🧠 Git-Core Protocol - Remote Installer${NC}"
-echo "========================================"
+echo -e "${CYAN}🧠 Git-Core Protocol - Remote Installer v2.0${NC}"
+echo "=============================================="
 echo ""
 
 # Parse arguments
 ORGANIZE_FILES=false
 AUTO_MODE=false
 UPGRADE_MODE=false
+FORCE_MODE=false
 for arg in "$@"; do
     case $arg in
         --organize|-o)
@@ -38,25 +43,138 @@ for arg in "$@"; do
             ;;
         --upgrade|-u)
             UPGRADE_MODE=true
-            AUTO_MODE=true  # Upgrade implies auto
+            AUTO_MODE=true
+            ;;
+        --force|-f)
+            FORCE_MODE=true
+            UPGRADE_MODE=true
+            AUTO_MODE=true
+            ;;
+        --help|-h)
+            echo "Usage: install.sh [OPTIONS]"
+            echo ""
+            echo "Options:"
+            echo "  --organize, -o    Organize existing files before installing"
+            echo "  --auto, -y        Non-interactive mode"
+            echo "  --upgrade, -u     Upgrade protocol files (PRESERVES your ARCHITECTURE.md)"
+            echo "  --force, -f       Force full upgrade (overwrites everything)"
+            echo "  --help, -h        Show this help"
+            echo ""
+            echo "Examples:"
+            echo "  curl -fsSL .../install.sh | bash                    # New install"
+            echo "  curl -fsSL .../install.sh | bash -s -- --upgrade    # Safe upgrade"
+            echo "  curl -fsSL .../install.sh | bash -s -- --force      # Full reset"
+            exit 0
             ;;
     esac
 done
 
-# Show upgrade mode
-if [ "$UPGRADE_MODE" = true ]; then
-    echo -e "${YELLOW}🔄 UPGRADE MODE: Protocol files will be overwritten${NC}"
+# Show mode
+if [ "$FORCE_MODE" = true ]; then
+    echo -e "${RED}⚠️  FORCE MODE: ALL files will be overwritten (including ARCHITECTURE.md)${NC}"
+elif [ "$UPGRADE_MODE" = true ]; then
+    echo -e "${YELLOW}🔄 UPGRADE MODE: Protocol files updated, your ARCHITECTURE.md preserved${NC}"
+fi
+echo ""
+
+# Function to get current version
+get_current_version() {
+    if [ -f ".git-core-protocol-version" ]; then
+        cat ".git-core-protocol-version" | tr -d '[:space:]'
+    else
+        echo "0.0.0"
+    fi
+}
+
+# Function to get remote version
+get_remote_version() {
+    curl -fsSL "$RAW_URL/.git-core-protocol-version" 2>/dev/null | tr -d '[:space:]' || echo "unknown"
+}
+
+# Show version info
+CURRENT_VERSION=$(get_current_version)
+if [ "$CURRENT_VERSION" != "0.0.0" ]; then
+    REMOTE_VERSION=$(get_remote_version)
+    echo -e "${BLUE}📊 Version Info:${NC}"
+    echo -e "   Current: ${YELLOW}$CURRENT_VERSION${NC}"
+    echo -e "   Latest:  ${GREEN}$REMOTE_VERSION${NC}"
     echo ""
 fi
+
+# Function to backup user files
+backup_user_files() {
+    echo -e "${CYAN}💾 Backing up user files...${NC}"
+    mkdir -p "$BACKUP_DIR"
+    
+    # Always backup ARCHITECTURE.md if it exists
+    if [ -f ".ai/ARCHITECTURE.md" ]; then
+        cp ".ai/ARCHITECTURE.md" "$BACKUP_DIR/ARCHITECTURE.md"
+        echo -e "  ${GREEN}✓ .ai/ARCHITECTURE.md backed up${NC}"
+    fi
+    
+    # Backup CONTEXT_LOG.md if it exists
+    if [ -f ".ai/CONTEXT_LOG.md" ]; then
+        cp ".ai/CONTEXT_LOG.md" "$BACKUP_DIR/CONTEXT_LOG.md"
+        echo -e "  ${GREEN}✓ .ai/CONTEXT_LOG.md backed up${NC}"
+    fi
+    
+    # Backup custom workflows
+    if [ -d ".github/workflows" ]; then
+        mkdir -p "$BACKUP_DIR/workflows"
+        for file in .github/workflows/*.yml; do
+            if [ -f "$file" ]; then
+                filename=$(basename "$file")
+                # Only backup non-protocol workflows
+                case "$filename" in
+                    update-protocol.yml|structure-validator.yml|codex-review.yml|agent-dispatcher.yml)
+                        # Protocol workflows - don't backup
+                        ;;
+                    *)
+                        cp "$file" "$BACKUP_DIR/workflows/"
+                        echo -e "  ${GREEN}✓ Custom workflow: $filename${NC}"
+                        ;;
+                esac
+            fi
+        done
+    fi
+}
+
+# Function to restore user files
+restore_user_files() {
+    echo -e "${CYAN}📥 Restoring user files...${NC}"
+    
+    # Restore ARCHITECTURE.md (unless force mode)
+    if [ "$FORCE_MODE" != true ] && [ -f "$BACKUP_DIR/ARCHITECTURE.md" ]; then
+        cp "$BACKUP_DIR/ARCHITECTURE.md" ".ai/ARCHITECTURE.md"
+        echo -e "  ${GREEN}✓ .ai/ARCHITECTURE.md restored${NC}"
+    fi
+    
+    # Always restore CONTEXT_LOG.md
+    if [ -f "$BACKUP_DIR/CONTEXT_LOG.md" ]; then
+        cp "$BACKUP_DIR/CONTEXT_LOG.md" ".ai/CONTEXT_LOG.md"
+        echo -e "  ${GREEN}✓ .ai/CONTEXT_LOG.md restored${NC}"
+    fi
+    
+    # Restore custom workflows
+    if [ -d "$BACKUP_DIR/workflows" ]; then
+        for file in "$BACKUP_DIR/workflows"/*.yml; do
+            if [ -f "$file" ]; then
+                cp "$file" ".github/workflows/"
+                echo -e "  ${GREEN}✓ Custom workflow restored: $(basename $file)${NC}"
+            fi
+        done
+    fi
+    
+    # Cleanup backup
+    rm -rf "$BACKUP_DIR"
+}
 
 # Function to organize existing files
 organize_existing_files() {
     echo -e "${YELLOW}📂 Organizing existing files...${NC}"
 
-    # Create necessary directories
     mkdir -p docs/archive scripts tests src
 
-    # Move markdown files to docs/archive (except special ones)
     for file in *.md; do
         if [ -f "$file" ]; then
             case "$file" in
@@ -71,8 +189,7 @@ organize_existing_files() {
         fi
     done
 
-    # Move test files
-    for pattern in test_*.py *_test.py *_test.js *.test.js *.test.ts test_*.js *.spec.js *.spec.ts; do
+    for pattern in test_*.py *_test.py *.test.js *.test.ts *.spec.js *.spec.ts; do
         for file in $pattern; do
             if [ -f "$file" ] && [ "$file" != "$pattern" ]; then
                 mv "$file" "tests/" 2>/dev/null && \
@@ -81,25 +198,10 @@ organize_existing_files() {
         done
     done
 
-    # Move loose script files to scripts/ (except install.sh)
-    for file in *.sh *.ps1 *.bat; do
-        if [ -f "$file" ] && [ "$file" != "$pattern" ]; then
-            case "$file" in
-                install.sh)
-                    echo -e "  ${GREEN}✓ Keeping $file in root${NC}"
-                    ;;
-                *)
-                    mv "$file" "scripts/" 2>/dev/null && \
-                    echo -e "  ${CYAN}→ $file moved to scripts/${NC}" || true
-                    ;;
-            esac
-        fi
-    done
-
     echo -e "${GREEN}✅ Files organized${NC}"
 }
 
-# Check if we should auto-organize
+# Check if should organize
 if [ "$ORGANIZE_FILES" = true ]; then
     organize_existing_files
 fi
@@ -110,58 +212,76 @@ if [ "$(ls -A 2>/dev/null | grep -v '^\.' | head -1)" ] && [ "$AUTO_MODE" = fals
     echo ""
     echo "Options:"
     echo "  1) Continue and merge files"
-    echo "  2) Organize existing files first (move .md to docs/archive/)"
+    echo "  2) Organize existing files first"
     echo "  3) Cancel"
     echo ""
     read -p "Select (1/2/3): " CHOICE
 
     case $CHOICE in
-        1)
-            echo "Continuing..."
-            ;;
-        2)
-            organize_existing_files
-            ;;
-        3)
-            echo "Cancelled."
-            exit 0
-            ;;
-        *)
-            echo "Invalid option. Cancelling."
-            exit 1
-            ;;
+        1) echo "Continuing..." ;;
+        2) organize_existing_files ;;
+        3) echo "Cancelled."; exit 0 ;;
+        *) echo "Invalid option."; exit 1 ;;
     esac
 fi
 
+# Backup user files before upgrade
+if [ "$UPGRADE_MODE" = true ]; then
+    backup_user_files
+fi
+
 # Download template
-echo -e "\n${CYAN}📥 Downloading Git-Core Protocol template...${NC}"
+echo -e "\n${CYAN}📥 Downloading Git-Core Protocol...${NC}"
 git clone --depth 1 "$REPO_URL" "$TEMP_DIR" 2>/dev/null || {
     echo -e "${RED}❌ Error cloning repository${NC}"
     exit 1
 }
 
-# Remove template's git history
 rm -rf "$TEMP_DIR/.git"
 
-# Move template files (don't overwrite existing)
+# Install files
 echo -e "${CYAN}📦 Installing protocol files...${NC}"
 
-# Copy directories
-for dir in .ai .github scripts; do
+# Handle .ai directory specially
+if [ -d "$TEMP_DIR/.ai" ]; then
+    if [ "$UPGRADE_MODE" = true ]; then
+        rm -rf .ai
+        cp -r "$TEMP_DIR/.ai" .
+        echo -e "  ${GREEN}✓ .ai/ (upgraded)${NC}"
+    elif [ ! -d ".ai" ]; then
+        cp -r "$TEMP_DIR/.ai" .
+        echo -e "  ${GREEN}✓ .ai/${NC}"
+    else
+        echo -e "  ${YELLOW}~ .ai/ (exists, merging new files only)${NC}"
+        for file in "$TEMP_DIR/.ai"/*; do
+            filename=$(basename "$file")
+            if [ ! -f ".ai/$filename" ]; then
+                cp "$file" ".ai/"
+                echo -e "    ${GREEN}+ $filename${NC}"
+            fi
+        done
+    fi
+fi
+
+# Copy other directories
+for dir in .github scripts docs; do
     if [ -d "$TEMP_DIR/$dir" ]; then
         if [ "$UPGRADE_MODE" = true ]; then
-            cp -rf "$TEMP_DIR/$dir" .
+            rm -rf "$dir"
+            cp -r "$TEMP_DIR/$dir" .
             echo -e "  ${GREEN}✓ $dir/ (upgraded)${NC}"
-        else
-            cp -rn "$TEMP_DIR/$dir" . 2>/dev/null || cp -r "$TEMP_DIR/$dir" .
+        elif [ ! -d "$dir" ]; then
+            cp -r "$TEMP_DIR/$dir" .
             echo -e "  ${GREEN}✓ $dir/${NC}"
+        else
+            cp -rn "$TEMP_DIR/$dir"/* "$dir/" 2>/dev/null || true
+            echo -e "  ${GREEN}✓ $dir/ (merged)${NC}"
         fi
     fi
 done
 
-# Protocol files (always overwrite in upgrade mode)
+# Protocol files
 PROTOCOL_FILES=".cursorrules .windsurfrules AGENTS.md .git-core-protocol-version"
-
 for file in $PROTOCOL_FILES; do
     if [ -f "$TEMP_DIR/$file" ]; then
         if [ "$UPGRADE_MODE" = true ]; then
@@ -171,53 +291,60 @@ for file in $PROTOCOL_FILES; do
             cp "$TEMP_DIR/$file" .
             echo -e "  ${GREEN}✓ $file${NC}"
         else
-            echo -e "  ${YELLOW}~ $file (exists, not overwritten)${NC}"
+            echo -e "  ${YELLOW}~ $file (exists)${NC}"
         fi
     fi
 done
 
-# .gitignore - never overwrite (project-specific)
-if [ -f "$TEMP_DIR/.gitignore" ] && [ ! -f ".gitignore" ]; then
-    cp "$TEMP_DIR/.gitignore" .
-    echo -e "  ${GREEN}✓ .gitignore${NC}"
-elif [ -f ".gitignore" ]; then
-    echo -e "  ${YELLOW}~ .gitignore (exists, not overwritten)${NC}"
-fi
-
-# Copy README only if it doesn't exist
-if [ ! -f "README.md" ]; then
-    cp "$TEMP_DIR/README.md" .
-    echo -e "  ${GREEN}✓ README.md${NC}"
-else
-    echo -e "  ${YELLOW}~ README.md (exists, not overwritten)${NC}"
-fi
+# Files that should never be overwritten
+PRESERVE_FILES=".gitignore README.md"
+for file in $PRESERVE_FILES; do
+    if [ -f "$TEMP_DIR/$file" ] && [ ! -f "$file" ]; then
+        cp "$TEMP_DIR/$file" .
+        echo -e "  ${GREEN}✓ $file${NC}"
+    elif [ -f "$file" ]; then
+        echo -e "  ${YELLOW}~ $file (preserved)${NC}"
+    fi
+done
 
 # Cleanup temp
 rm -rf "$TEMP_DIR"
 
+# Restore user files after upgrade
+if [ "$UPGRADE_MODE" = true ]; then
+    restore_user_files
+fi
+
 # Make scripts executable
 chmod +x scripts/*.sh 2>/dev/null || true
 
+# Show final version
+NEW_VERSION=$(get_current_version)
+
 echo ""
 echo -e "${GREEN}========================================${NC}"
-echo -e "${GREEN}✅ Git-Core Protocol installed${NC}"
+echo -e "${GREEN}✅ Git-Core Protocol v$NEW_VERSION installed${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo ""
-echo "📋 Files installed:"
-echo "   .ai/ARCHITECTURE.md    - Document your architecture here"
-echo "   .github/               - Copilot rules + workflows + templates"
-echo "   scripts/               - Init and update scripts"
-echo "   AGENTS.md              - Rules for all AI agents"
-echo "   .cursorrules           - Rules for Cursor"
-echo "   .windsurfrules         - Rules for Windsurf"
-echo "   .git-core-protocol-version - Protocol version (for auto-updates)"
+
+if [ "$UPGRADE_MODE" = true ]; then
+    echo -e "${CYAN}📋 Upgraded from v$CURRENT_VERSION → v$NEW_VERSION${NC}"
+    if [ "$FORCE_MODE" != true ]; then
+        echo -e "${GREEN}✓ Your ARCHITECTURE.md was preserved${NC}"
+    fi
+else
+    echo -e "📋 Files installed:"
+    echo "   .ai/ARCHITECTURE.md    - Document your architecture here"
+    echo "   .github/               - Copilot rules + workflows"
+    echo "   scripts/               - Init and update scripts"
+    echo "   AGENTS.md              - Rules for all AI agents"
+fi
+
 echo ""
 echo -e "${YELLOW}🚀 Next step:${NC}"
 echo "   ./scripts/init_project.sh"
 echo ""
-echo -e "${CYAN}🔄 To check for updates later:${NC}"
-echo "   ./scripts/check-protocol-update.sh --update"
-echo ""
-echo -e "${CYAN}💡 Tips:${NC}"
-echo -e "${CYAN}   New install:  curl -sL .../install.sh | bash -s -- --auto --organize${NC}"
-echo -e "${CYAN}   Upgrade:      curl -sL .../install.sh | bash -s -- --upgrade${NC}"
+echo -e "${CYAN}💡 Commands:${NC}"
+echo "   Safe upgrade:  curl -fsSL .../install.sh | bash -s -- --upgrade"
+echo "   Full reset:    curl -fsSL .../install.sh | bash -s -- --force"
+echo "   Check updates: ./scripts/check-protocol-update.sh"

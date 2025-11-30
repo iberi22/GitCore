@@ -40,31 +40,31 @@ setup:
 # These are read by Copilot when it starts a session
 instructions: |
   You are working in a repository that follows the Git-Core Protocol.
-  
+
   ## Key Rules:
   1. NEVER create TODO.md, PROGRESS.md, PLANNING.md, or any tracking files
   2. State management is done via GitHub Issues ONLY
   3. Use conventional commits: feat|fix|docs|chore(scope): description
   4. Include AI-Context footer for complex decisions
   5. Reference issues in commits: "closes #X" or "refs #X"
-  
+
   ## Before making changes:
   1. Read .ai/ARCHITECTURE.md for system context
   2. Check the issue description for requirements
   3. Review existing code patterns
-  
+
   ## When creating PRs:
   1. Use descriptive title following conventional commits
   2. Reference the issue being addressed
   3. Include summary of changes in description
   4. Add AI-Context for architectural decisions
-  
+
   ## Commit message format:
   ```
   feat(scope): description #issue
-  
+
   Body explaining what and why
-  
+
   AI-Context: decision-type | rationale
   ```
 

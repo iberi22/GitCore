@@ -283,7 +283,7 @@ gh issue edit <number> --add-label "copilot"
 # OR
 gh issue edit <number> --add-assignee "Copilot"
 
-# Assign to Google Jules  
+# Assign to Google Jules
 gh issue edit <number> --add-label "jules"
 ```
 
@@ -487,5 +487,5 @@ gh pr merge <number>
 
 ---
 
-*Protocol Version: 1.1.0*
+*Protocol Version: 1.2.0
 *Last Updated: 2025*

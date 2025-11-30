@@ -8,11 +8,11 @@ on:
   # Trigger on PR review comments with @codex mention
   issue_comment:
     types: [created]
-  
+
   # Trigger when specific labels are added
   pull_request:
     types: [labeled, opened]
-  
+
   # Manual trigger for testing
   workflow_dispatch:
     inputs:
@@ -60,13 +60,13 @@ jobs:
             RUN="true"
             TASK="${{ github.event.inputs.task }}"
             PR_NUMBER="${{ github.event.inputs.pr_number }}"
-          
+
           # Comment trigger: @codex review, @codex security, @codex analyze
           elif [ "$EVENT_NAME" = "issue_comment" ]; then
             if [[ "$COMMENT_BODY" == *"@codex"* ]]; then
               RUN="true"
               PR_NUMBER="${{ github.event.issue.number }}"
-              
+
               if [[ "$COMMENT_BODY" == *"security"* ]]; then
                 TASK="security-audit"
               elif [[ "$COMMENT_BODY" == *"performance"* ]] || [[ "$COMMENT_BODY" == *"analyze"* ]]; then
@@ -75,7 +75,7 @@ jobs:
                 TASK="documentation-check"
               fi
             fi
-          
+
           # Label trigger
           elif [ "$EVENT_NAME" = "pull_request" ]; then
             PR_NUMBER="${{ github.event.pull_request.number }}"
@@ -102,7 +102,7 @@ jobs:
       issues: write
     outputs:
       final_message: ${{ steps.run_codex.outputs.final-message }}
-    
+
     steps:
       - name: 📥 Checkout PR
         uses: actions/checkout@v5
@@ -135,39 +135,39 @@ jobs:
           sandbox: read-only
           prompt: |
             You are reviewing PR #${{ needs.should-run.outputs.pr_number }} for repository ${{ github.repository }}.
-            
+
             Task: ${{ needs.should-run.outputs.task }}
-            
+
             Repository follows Git-Core Protocol. Key rules:
             - No TODO.md, PROGRESS.md, or tracking files
             - State management via GitHub Issues only
             - Use conventional commits with AI-Context footer
-            
+
             ${{ steps.agents_context.outputs.agents_context }}
-            
+
             Review ONLY the changes introduced by the PR:
             ```
             git diff ${{ github.event.pull_request.base.sha || 'main' }}..HEAD
             ```
-            
+
             Based on task type, focus on:
             - review: Code quality, best practices, potential bugs
             - security-audit: Security vulnerabilities, injection risks, secrets exposure
             - performance-analysis: Performance bottlenecks, memory leaks, optimization opportunities
             - documentation-check: Missing docs, outdated comments, unclear code
-            
+
             Format response as:
             ## 🤖 Codex Analysis: ${{ needs.should-run.outputs.task }}
-            
+
             ### Summary
             [Brief overview]
-            
+
             ### Findings
             [Detailed findings with file:line references]
-            
+
             ### Recommendations
             [Actionable suggestions]
-            
+
             ---
             *Analyzed by Codex (gpt-5.1-codex-high) via Git-Core Protocol*
 
