@@ -309,26 +309,182 @@ gh issue create --title "TEST: Auth integration tests" \
 
 ## 🤖 AI Coding Agents (Copilot & Jules)
 
-This protocol supports **two autonomous coding agents** that can work on issues and PRs:
+This protocol supports **two autonomous coding agents** that can work on issues and create PRs:
 
-| Agent | Provider | Trigger | Branch Pattern |
-|-------|----------|---------|----------------|
-| **Copilot** | GitHub/Microsoft | Label `copilot` or assign "Copilot" | `copilot/*` |
-| **Jules** | Google | Label `jules` (case insensitive) | Creates PR directly |
+| Agent | Provider | GitHub Trigger | CLI Available | Branch Pattern |
+|-------|----------|----------------|---------------|----------------|
+| **Copilot** | GitHub/Microsoft | Label `copilot` or assign "Copilot" | No (GitHub only) | `copilot/*` |
+| **Jules** | Google | Label `jules` (case insensitive) | ✅ `jules` CLI | Creates PR directly |
 
-### Choosing an Agent
+---
 
-You can assign tasks to either agent based on preference or workload:
+### GitHub Copilot Coding Agent
+
+GitHub's autonomous coding agent that works directly on your repository.
+
+#### ⚠️ Important: Copilot is GitHub-Only
+
+Copilot Coding Agent **only works via GitHub interface** - there is no CLI.
+
+#### Trigger Methods (GitHub)
 
 ```bash
-# Assign to GitHub Copilot
+# Method 1: Add label (recommended)
 gh issue edit <number> --add-label "copilot"
-# OR
+
+# Method 2: Assign directly to Copilot
 gh issue edit <number> --add-assignee "Copilot"
 
-# Assign to Google Jules
-gh issue edit <number> --add-label "jules"
+# Method 3: In PR comments - mention @copilot
+# Example: "@copilot fix this linting error"
 ```
+
+#### Monitor Copilot
+
+```bash
+# List all Copilot branches/PRs
+gh pr list --head "copilot/"
+
+# Check specific PR
+gh pr view <number>
+
+# See Copilot's activity
+gh pr checks <number>
+```
+
+#### Environment Setup
+
+Create `.github/copilot-setup-steps.yml` for Copilot sessions:
+
+```yaml
+# Example setup for Copilot
+steps:
+  - run: npm install
+  - run: npm run build
+```
+
+---
+
+### Google Jules Coding Agent
+
+Google's **asynchronous** coding agent with full CLI support and GitHub integration.
+
+#### Installation
+
+```bash
+# Install Jules CLI globally
+npm install -g @google/jules
+
+# Login to your Google account
+jules login
+
+# Verify installation
+jules version
+```
+
+#### ⚠️ Key Difference: GitHub Label vs CLI
+
+| Method | How it works | Best for |
+|--------|--------------|----------|
+| **GitHub Label** | Add `jules` label → Jules auto-comments → Creates PR | Simple issues, visible progress |
+| **Jules CLI** | Run `jules new "task"` → Works in background → Pull results | Batch processing, scripting, automation |
+
+#### Method 1: GitHub Label (Requires Jules GitHub App)
+
+```bash
+# Add label to issue - Jules will auto-respond
+gh issue edit <number> --add-label "jules"
+
+# Jules will:
+# 1. Comment on the issue acknowledging the task
+# 2. Work on the code
+# 3. Comment again with a link to the PR when done
+```
+
+**Note:** The label must be exactly `jules` (case insensitive). Tags like `@jules-google` in comments **do NOT work** - only the label triggers Jules.
+
+#### Method 2: Jules CLI (Recommended for Automation)
+
+```bash
+# Create session from current repo
+jules new "add unit tests for auth module"
+
+# Create session for specific repo
+jules new --repo owner/repo "fix bug in login"
+
+# Create session from GitHub issue
+gh issue view 42 --json title,body | jq -r '.title + "\n\n" + .body' | jules new
+
+# Parallel sessions (1-5) for same task - different approaches
+jules new --parallel 3 "optimize database queries"
+```
+
+#### Jules CLI Commands Reference
+
+```bash
+# Interactive TUI Dashboard
+jules                           # Launch interactive dashboard
+
+# Session Management
+jules new "task description"    # Create new session
+jules remote list --session     # List all sessions
+jules remote list --repo        # List connected repos
+jules remote pull --session ID  # Get session results
+jules remote pull --session ID --apply  # Pull and apply patch locally
+
+# Authentication
+jules login                     # Login to Google account
+jules logout                    # Logout
+
+# Help
+jules --help                    # General help
+jules new --help                # Help for 'new' command
+jules remote --help             # Help for 'remote' commands
+```
+
+#### Advanced: Batch Processing with Jules CLI
+
+```bash
+# Process all issues with label "jules"
+gh issue list --label "ai-agent" --json number,title | \
+  jq -r '.[] | "\(.number): \(.title)"' | \
+  while read line; do
+    jules new "$line"
+  done
+
+# Create session from first assigned issue
+gh issue list --assignee @me --limit 1 --json title | \
+  jq -r '.[0].title' | jules new
+
+# Use Gemini CLI to pick the most tedious issue and send to Jules
+gemini -p "find the most tedious issue, print it verbatim\n$(gh issue list --assignee @me)" | jules new
+
+# Process TODO.md file (each line becomes a session)
+cat TODO.md | while IFS= read -r line; do
+  jules new "$line"
+done
+```
+
+#### Jules AGENTS.md Support
+
+Jules automatically reads `AGENTS.md` from your repo root to understand:
+- Project conventions
+- Code style preferences
+- Agent-specific instructions
+
+Keep `AGENTS.md` updated for better Jules results.
+
+---
+
+### Choosing Between Copilot and Jules
+
+| Scenario | Recommended Agent | Why |
+|----------|-------------------|-----|
+| Quick bug fix | Copilot | Faster for simple tasks |
+| Complex feature | Jules | Better planning, async work |
+| Batch processing | Jules CLI | Scriptable, parallel sessions |
+| PR-based workflow | Copilot | Native GitHub integration |
+| Need CLI automation | Jules | Full CLI support |
 
 ### Load Balancing (Auto-Distribution)
 
@@ -340,118 +496,6 @@ gh workflow run agent-dispatcher.yml
 
 # Or add label to auto-dispatch
 gh issue edit <number> --add-label "ai-agent"
-```
-
----
-
-### GitHub Copilot Coding Agent
-
-GitHub's autonomous coding agent that works directly on your repository.
-
-**Trigger Methods:**
-
-```bash
-# Method 1: Add label
-gh issue edit <number> --add-label "copilot"
-
-# Method 2: Assign directly
-gh issue edit <number> --add-assignee "Copilot"
-
-# Method 3: Mention in PR comments
-# Comment "@copilot fix this bug" in any PR
-```
-
-**Monitor Copilot:**
-
-```bash
-# List Copilot branches
-gh pr list --head "copilot/"
-
-# Check Copilot's work
-gh pr view <number>
-```
-
-**Environment Setup:**
-The repository includes `.github/copilot-setup-steps.yml` for Copilot sessions.
-
----
-
-### Google Jules Coding Agent
-
-Google's asynchronous coding agent with CLI and GitHub integration.
-
-**Installation:**
-
-```bash
-# Install Jules CLI
-# Visit: https://jules.google/docs/
-
-# Login
-jules login
-```
-
-**Trigger Methods:**
-
-```bash
-# Method 1: Add label "jules" to any issue (GitHub App required)
-gh issue edit <number> --add-label "jules"
-
-# Method 2: CLI - Create session from issue
-gh issue list --assignee @me --limit 1 --json title | jq -r '.[0].title' | jules new
-
-# Method 3: CLI - Direct task
-jules new "implement user authentication"
-
-# Method 4: CLI - Specific repo
-jules new --repo owner/repo "write unit tests"
-```
-
-**CLI Commands:**
-
-```bash
-# Launch TUI
-jules
-
-# Create new session
-jules new "task description"
-
-# Parallel sessions (same task, multiple approaches)
-jules new --parallel 3 "optimize database queries"
-
-# List sessions
-jules remote list --session
-
-# Pull results
-jules remote pull --session <id>
-
-# Pull and apply patch
-jules remote pull --session <id> --apply
-```
-
-**Monitor Jules:**
-
-```bash
-# List all sessions
-jules remote list --session
-
-# Check specific session
-jules remote pull --session <id>
-```
-
-**Jules Comments:** When Jules finishes, it comments on the issue with a link to the PR.
-
----
-
-### Advanced: Batch Processing with Jules CLI
-
-```bash
-# Process multiple issues automatically
-gh issue list --label "jules" --json number,title | jq -r '.[] | "\(.number): \(.title)"' | while read line; do
-  jules new "$line"
-done
-
-# Use Gemini to prioritize issues for Jules
-gemini -p "find the most tedious issue:\n$(gh issue list --assignee @me)" | jules new
 ```
 
 ---

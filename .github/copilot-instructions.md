@@ -209,10 +209,16 @@ codex exec "..."           # Headless automation
 - Comment `/codex-review` for on-demand review
 - Comment `/codex-analyze` for codebase analysis
 
-### 12. Copilot Coding Agent (Jules)
+### 12. GitHub Copilot Coding Agent
+
+**⚠️ Copilot is GitHub-only - NO CLI available.**
 
 **Assign issues to Copilot:**
 ```bash
+# Method 1: Add label
+gh issue edit <number> --add-label "copilot"
+
+# Method 2: Assign directly
 gh issue edit <number> --add-assignee "Copilot"
 ```
 
@@ -227,23 +233,41 @@ gh pr list --head "copilot/"
 
 ### 13. Google Jules Agent
 
-**Assign issues to Jules:**
+**⚠️ Jules has TWO methods: GitHub Label OR CLI. Tags like `@jules-google` do NOT work.**
+
+**Method 1: GitHub Label (requires Jules GitHub App)**
 ```bash
-# Via GitHub label (requires Jules GitHub App)
+# Add label "jules" (case insensitive) - Jules auto-responds
 gh issue edit <number> --add-label "jules"
 ```
 
-**Via Jules CLI:**
+**Method 2: Jules CLI (Recommended for automation)**
 ```bash
+# Install
+npm install -g @google/jules
+jules login
+
+# Create session from current repo
 jules new "implement feature X"
+
+# Create session for specific repo
 jules new --repo owner/repo "write unit tests"
+
+# Parallel sessions (1-5)
 jules new --parallel 3 "optimize queries"
+
+# Create session from GitHub issue
+gh issue view 42 --json title,body | jq -r '.title + "\n\n" + .body' | jules new
 ```
 
-**Monitor Jules sessions:**
+**Jules CLI Commands:**
 ```bash
-jules remote list --session
-jules remote pull --session <id> --apply
+jules                           # Interactive TUI dashboard
+jules new "task"                # Create new session
+jules remote list --session     # List all sessions
+jules remote list --repo        # List connected repos
+jules remote pull --session ID  # Get session results
+jules remote pull --session ID --apply  # Pull and apply patch
 ```
 
 ### 14. Agent Load Balancing
