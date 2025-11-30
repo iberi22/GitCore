@@ -257,7 +257,25 @@ gh issue edit <number> --add-label "ai-agent"
 gh workflow run agent-dispatcher.yml
 ```
 
-### 15. Commits Atómicos (OBLIGATORIO)
+### 15. AI Code Review Bots (CodeRabbit + Gemini)
+
+**Automated AI reviews on every PR using two complementary bots:**
+
+| Bot | Free For | Commands |
+|-----|----------|----------|
+| **CodeRabbit** | OSS (Pro free) | Auto-reviews every PR |
+| **Gemini Code Assist** | Everyone (100%) | `/gemini review`, `/gemini summary` |
+
+**Workflow:**
+1. Create PR → CodeRabbit auto-reviews
+2. Address suggestions → Use `/gemini review` for second opinion
+3. Human approves → Merge ✅
+
+**Configuration files:**
+- `.coderabbit.yaml` - CodeRabbit rules
+- `.gemini/config.yaml` - Gemini style guide
+
+### 16. Commits Atómicos (OBLIGATORIO)
 
 **UN commit = UN cambio lógico. NUNCA mezclar concerns.**
 

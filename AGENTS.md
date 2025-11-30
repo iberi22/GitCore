@@ -302,6 +302,8 @@ gh issue create --title "TEST: Auth integration tests" \
 | `codex-review` | Trigger Codex AI review | 🟣 Purple |
 | `copilot` | Assigned to GitHub Copilot Agent | 🔵 Blue |
 | `jules` | Assigned to Google Jules Agent | 🟠 Orange |
+| `coderabbit` | CodeRabbit review requested | 🐰 Purple |
+| `gemini-review` | Gemini Code Assist review | 💎 Cyan |
 
 ---
 
@@ -450,6 +452,88 @@ done
 
 # Use Gemini to prioritize issues for Jules
 gemini -p "find the most tedious issue:\n$(gh issue list --assignee @me)" | jules new
+```
+
+---
+
+## 🔍 AI Code Review Bots
+
+This protocol supports **automated AI code reviews** on every Pull Request using two complementary bots:
+
+| Bot | Provider | Cost | Best For |
+|-----|----------|------|----------|
+| **CodeRabbit** | CodeRabbit Inc | **Free for OSS** | Detailed summaries, security, Jira/Linear |
+| **Gemini Code Assist** | Google | **100% Free** | On-demand reviews, interactive commands |
+
+### CodeRabbit
+
+Automatic AI code reviews with PR summaries and line-by-line suggestions.
+
+**Installation:**
+1. Go to [github.com/marketplace/coderabbit](https://github.com/marketplace/coderabbit)
+2. Install on your repository
+3. Add `.coderabbit.yaml` (optional):
+
+```yaml
+language: en
+reviews:
+  auto_review:
+    enabled: true
+    drafts: false
+  path_instructions:
+    - path: "**/*.md"
+      instructions: "Check conventional commits references"
+    - path: "scripts/**"
+      instructions: "Verify cross-platform compatibility"
+```
+
+**Features:**
+- ✅ Automatic PR summaries
+- ✅ Line-by-line code suggestions
+- ✅ Security vulnerability detection
+- ✅ Learns from 👍/👎 feedback
+
+---
+
+### Gemini Code Assist
+
+Google's AI assistant with interactive commands in PRs.
+
+**Installation:**
+1. Go to [github.com/marketplace/gemini-code-assist](https://github.com/marketplace/gemini-code-assist)
+2. Install on your repository
+3. Create `.gemini/` folder for customization (optional)
+
+**PR Commands:**
+
+| Command | Action |
+|---------|--------|
+| `/gemini review` | Request full code review |
+| `/gemini summary` | Get PR summary |
+| `@gemini-code-assist` | Ask questions in comments |
+| `/gemini help` | Show all commands |
+
+**Configuration:** Create `.gemini/config.yaml`:
+
+```yaml
+code_review:
+  comment_severity: medium
+  style_guide: |
+    - Follow Conventional Commits
+    - Prefer atomic changes
+    - Reference GitHub issues
+```
+
+---
+
+### Recommended Workflow
+
+```
+1. Create PR → CodeRabbit auto-reviews
+2. Address CodeRabbit suggestions
+3. Use `/gemini review` for second opinion
+4. Human reviewer approves
+5. Merge ✅
 ```
 
 ---
