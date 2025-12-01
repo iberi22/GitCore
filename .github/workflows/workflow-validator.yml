@@ -130,20 +130,38 @@ jobs:
         run: |
           RUN_ID="${{ steps.run-id.outputs.run_id }}"
           
+          # Initialize defaults
+          HAS_ERRORS="false"
+          HAS_WARNINGS="false"
+          PERF_SCORE="0"
+          
           # Use Rust orchestrator if available, fallback to shell
           if [ -f "./bin/workflow-orchestrator" ]; then
             echo "🦀 Using Rust orchestrator..."
-            ./bin/workflow-orchestrator analyze \
+            # Separate stdout and stderr to avoid mixing with JSON
+            if ./bin/workflow-orchestrator analyze \
               --repo "$GITHUB_REPOSITORY" \
               --token "$GITHUB_TOKEN" \
               --output json \
-              --max-parallel 10 > analysis.json 2>&1 || true
-            
-            if [ -f "analysis.json" ]; then
-              HAS_ERRORS=$(jq -r '.errors // 0' analysis.json)
-              PERF_SCORE=$(jq -r '.performance_score // 0' analysis.json)
+              --max-parallel 10 > analysis.json 2> orchestrator.log; then
+              echo "✅ Orchestrator completed successfully"
+            else
+              echo "⚠️ Orchestrator exited with non-zero status"
+              cat orchestrator.log || true
             fi
-          else
+            
+            # Validate JSON before parsing
+            if [ -f "analysis.json" ] && jq empty analysis.json 2>/dev/null; then
+              HAS_ERRORS=$(jq -r '.errors // "false"' analysis.json || echo "false")
+              PERF_SCORE=$(jq -r '.performance_score // 0' analysis.json || echo "0")
+            else
+              echo "⚠️ Invalid or missing JSON output, using shell fallback"
+              rm -f analysis.json
+            fi
+          fi
+          
+          # Fallback to shell if no valid analysis.json
+          if [ ! -f "analysis.json" ]; then
             echo "📜 Using shell fallback..."
             # Parallel fetch using background jobs
             analyze_run() {
@@ -154,12 +172,9 @@ jobs:
             
             # Get recent runs
             RUNS=$(gh api "/repos/$GITHUB_REPOSITORY/actions/runs?per_page=20" \
-              --jq '.workflow_runs[].id')
+              --jq '.workflow_runs[].id' 2>/dev/null || echo "")
             
             # Parallel analysis
-            HAS_ERRORS="false"
-            HAS_WARNINGS="false"
-            
             for run in $RUNS; do
               JOBS=$(gh api "/repos/$GITHUB_REPOSITORY/actions/runs/$run/jobs" \
                 --jq '.jobs[] | select(.conclusion == "failure") | .name' 2>/dev/null)
@@ -167,8 +182,7 @@ jobs:
                 HAS_ERRORS="true"
                 echo "❌ Run #$run has failures: $JOBS"
               fi
-            done &
-            wait
+            done
           fi
           
           echo "has_errors=${HAS_ERRORS:-false}" >> $GITHUB_OUTPUT

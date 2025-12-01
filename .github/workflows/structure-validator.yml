@@ -28,7 +28,7 @@ jobs:
           fetch-depth: 0
 
       - name: 🦀 Setup Rust
-        uses: dtolnay/rust-action@stable
+        uses: dtolnay/rust-toolchain@stable
 
       - name: 📦 Cache validator
         uses: actions/cache@v4
@@ -39,7 +39,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             .github/actions/structure-validator/target/
-          key: ${{ runner.os }}-cargo-validator-${{ hashFiles('.github/actions/structure-validator/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-validator-${{ hashFiles('.github/actions/structure-validator/Cargo.toml') }}
 
       - name: 🔨 Build validator
         run: |
