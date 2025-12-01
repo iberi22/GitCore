@@ -56,22 +56,11 @@ reviews:
 chat:
   auto_reply: true
 
-# Review tone and focus
+# Review tone and focus (max 250 chars)
 tone_instructions: |
-  Focus on:
-  - Atomic commit principles
-  - Conventional commits compliance
-  - Code maintainability
-  - Security considerations
-  - Living Context accuracy (for docs/agent-docs/ PRs)
-  
-  Be constructive and provide actionable suggestions.
-  
-  For Living Context PRs (branch: living-context/*):
-  - Verify dependency version accuracy
-  - Check for known CVEs in listed versions
-  - Validate intelligent patterns are actionable
-  - Ensure quarantine dates follow 14-day rule
+  Focus on atomic commits, security, maintainability.
+  For Living Context PRs: verify versions, check CVEs, validate patterns.
+  Be constructive with actionable suggestions.
 
 # Knowledge base for context
 knowledge_base:
