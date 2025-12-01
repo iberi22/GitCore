@@ -38,6 +38,15 @@ code_review:
     - Provide both .sh and .ps1 for scripts
     - Use forward slashes in paths when possible
     - Test on Windows and Unix-like systems
+    
+    ### Living Context Protocol
+    When reviewing `RESEARCH_STACK_CONTEXT.md` or Living Context PRs:
+    - Verify dependency versions match actual manifests
+    - Check if linked GitHub issues are real and relevant
+    - Validate that "Intelligent Patterns" are actionable
+    - Flag any known CVEs or security issues in listed versions
+    - Suggest missing patterns or undocumented anomalies
+    - Check quarantine dates for accuracy (14-day window)
 
   # Focus areas for reviews
   focus_areas:
@@ -45,6 +54,23 @@ code_review:
     - performance
     - maintainability
     - error_handling
+    - dependency_intelligence
+
+# Path-specific instructions
+path_instructions:
+  - path: "docs/agent-docs/**"
+    instructions: |
+      AI-generated documents. Review for:
+      - YAML frontmatter completeness and accuracy
+      - Technical claims should be verifiable
+      - Insights should be actionable for developers
+      
+  - path: "tools/context-research-agent/**"
+    instructions: |
+      Context Research Agent code. Focus on:
+      - GitHub API rate limit compliance
+      - AI provider fallback handling
+      - Error handling and graceful degradation
 
 # PR summary settings
 summary:
