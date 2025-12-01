@@ -31,10 +31,12 @@ pub async fn generate_report(output_path: &Path, deps: &[Dependency], insights: 
 
     // 2. Intelligent Insights
     content.push_str("## 🧠 Intelligent Patterns & Anomalies\n\n");
-    content.push_str("> Analyzed by **GitHub Models (GPT-4o-mini)** - Free tier via `gh models run`.\n\n");
+    content.push_str("> Analyzed by **GitHub Models (Llama 3.3)** via `gh models run`.\n");
+    content.push_str("> Requires Copilot subscription for AI analysis.\n\n");
 
     if insights.is_empty() {
-        content.push_str("*No specific anomalies detected for the current stack versions.*\n");
+        content.push_str("*No specific anomalies detected for the current stack versions.*\n\n");
+        content.push_str("*AI analysis skipped (no issues found or GitHub Models unavailable).*\n");
     } else {
         for insight in insights {
             content.push_str(&format!("### {} ({})\n\n", insight.dependency_name, insight.version));
