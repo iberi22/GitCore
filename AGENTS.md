@@ -28,7 +28,8 @@ This repository follows the **Git-Core Protocol** for AI-assisted development.
 
 **NEVER create these files under ANY circumstances:**
 
-### Task/State Management:
+### Task/State Management
+
 ```
 ❌ TODO.md, TASKS.md, BACKLOG.md
 ❌ PLANNING.md, ROADMAP.md, PROGRESS.md
@@ -36,21 +37,24 @@ This repository follows the **Git-Core Protocol** for AI-assisted development.
 ❌ STATUS.md, CHECKLIST.md, CHANGELOG.md (for tracking)
 ```
 
-### Testing/Implementation Summaries:
+### Testing/Implementation Summaries
+
 ```
 ❌ TESTING_CHECKLIST.md, TEST_PLAN.md, TEST_GUI.md
 ❌ IMPLEMENTATION_SUMMARY.md, IMPLEMENTATION.md
 ❌ SUMMARY.md, OVERVIEW.md, REPORT.md
 ```
 
-### Guides/Tutorials:
+### Guides/Tutorials
+
 ```
 ❌ GETTING_STARTED.md, GUIDE.md, TUTORIAL.md
 ❌ QUICKSTART.md, SETUP.md, HOWTO.md
 ❌ INSTRUCTIONS.md, MANUAL.md
 ```
 
-### Catch-all:
+### Catch-all
+
 ```
 ❌ ANY .md file for task/state management
 ❌ ANY .md file for checklists or summaries
@@ -59,7 +63,8 @@ This repository follows the **Git-Core Protocol** for AI-assisted development.
 ❌ ANY JSON/YAML for task tracking
 ```
 
-### ✅ ONLY ALLOWED `.md` FILES:
+### ✅ ONLY ALLOWED `.md` FILES
+
 ```
 ✅ README.md (project overview ONLY)
 ✅ AGENTS.md (agent configuration ONLY)
@@ -77,11 +82,13 @@ This repository follows the **Git-Core Protocol** for AI-assisted development.
 ## For All AI Agents (Copilot, Cursor, Windsurf, Claude, etc.)
 
 ### 🎯 Prime Directive: Token Economy
+
 ```
 Your state is GitHub Issues. Not memory. Not files. GitHub Issues.
 ```
 
 ### 📖 Required Reading Before Any Task
+
 1. `.✨/ARCHITECTURE.md` - Understand the system
 2. `gh issue list --assignee "@me"` - Your current task
 3. `gh issue list --limit 5` - Available backlog
@@ -96,7 +103,8 @@ Your state is GitHub Issues. Not memory. Not files. GitHub Issues.
 2. Verify your implementation matches the decided stack
 3. If issue mentions alternatives, ARCHITECTURE.md decision wins
 
-### Example of what NOT to do:
+### Example of what NOT to do
+
 - Issue says: "Deploy to Vercel or GitHub Pages"
 - ARCHITECTURE.md says: "Hosting: GitHub Pages"
 - ❌ WRONG: Implement Vercel because issue mentioned it
@@ -105,6 +113,7 @@ Your state is GitHub Issues. Not memory. Not files. GitHub Issues.
 **Why?** Architecture decisions are made after careful consideration of project constraints. Issues may present options for discussion, but once a decision is recorded in ARCHITECTURE.md, it is final.
 
 **Related Documentation:**
+
 - `.✨/ARCHITECTURE.md` - CRITICAL DECISIONS table
 - `.github/copilot-instructions.md` - Architecture First Rule
 
@@ -113,6 +122,7 @@ Your state is GitHub Issues. Not memory. Not files. GitHub Issues.
 ## 🔄 The Loop (Workflow)
 
 ### Phase 1: READ (Context Loading)
+
 ```bash
 # Always start here
 cat .✨/ARCHITECTURE.md
@@ -120,6 +130,7 @@ gh issue list --assignee "@me" --state open
 ```
 
 ### Phase 2: ACT (Development)
+
 ```bash
 # Claim a task
 gh issue edit <ISSUE_NUMBER> --add-assignee "@me"
@@ -136,6 +147,7 @@ git commit -m "feat(scope): description (closes #<ISSUE_NUMBER>)"
 ```
 
 ### Phase 3: UPDATE (Close the Loop)
+
 ```bash
 # Push and create PR
 git push -u origin HEAD
@@ -209,6 +221,7 @@ Al completar un PR, ejecutar automáticamente:
 **Alternativa a `gh issue create`: Crea issues usando archivos .md**
 
 ### Ubicación
+
 ```
 .github/issues/
 ├── _TEMPLATE.md              # Template para nuevos issues
@@ -279,6 +292,7 @@ Contenido del issue...
 ### Auto-Limpieza
 
 Cuando un issue se **cierra** en GitHub:
+
 1. El workflow detecta el cierre
 2. Elimina el archivo `.md` correspondiente
 3. Actualiza el mapeo
@@ -410,7 +424,7 @@ AI-Context: dependency | Selected library X over Y due to bundle size
 
 **UN commit = UN cambio lógico. NUNCA mezclar concerns.**
 
-### Antes de hacer `git add .`, pregúntate:
+### Antes de hacer `git add .`, pregúntate
 
 1. ¿Todos los archivos son del mismo módulo/scope?
 2. ¿Es un solo tipo de cambio (feat/fix/docs/ci)?
@@ -419,7 +433,7 @@ AI-Context: dependency | Selected library X over Y due to bundle size
 
 Si alguna respuesta es "NO" → **SEPARAR EN MÚLTIPLES COMMITS**
 
-### Flujo correcto:
+### Flujo correcto
 
 ```bash
 # ❌ NUNCA
@@ -437,7 +451,7 @@ git add docs/
 git commit -m "docs: add authentication guide"
 ```
 
-### Herramientas:
+### Herramientas
 
 ```bash
 # Si ya tienes muchos archivos staged
@@ -497,6 +511,7 @@ cargo build --release
 ### AI Agent Usage
 
 **When bootstrapping a new project:**
+
 ```bash
 # Step 1: Install protocol (scripts are visible and auditable)
 curl -fsSL https://raw.githubusercontent.com/iberi22/Git-Core-Protocol/main/install.sh | bash
@@ -509,6 +524,7 @@ git-core check
 ```
 
 **When upgrading existing project:**
+
 ```bash
 # Safe upgrade (preserves your ARCHITECTURE.md)
 git-core upgrade
@@ -518,6 +534,7 @@ git-core status
 ```
 
 **When troubleshooting:**
+
 ```bash
 # Check integrity
 git-core check
@@ -548,6 +565,7 @@ irm https://raw.githubusercontent.com/iberi22/Git-Core-Protocol/main/install.ps1
 ```
 
 **Comparación de métodos:**
+
 | Método | Confianza | Velocidad | Funcionalidades |
 |--------|-----------|-----------|-----------------|
 | Shell Scripts | ⭐⭐⭐⭐⭐ (código visible) | Rápido | Básico |
@@ -760,6 +778,7 @@ done
 #### Jules AGENTS.md Support
 
 Jules automatically reads `AGENTS.md` from your repo root to understand:
+
 - Project conventions
 - Code style preferences
 - Agent-specific instructions
@@ -806,6 +825,7 @@ This protocol supports **automated AI code reviews** on every Pull Request using
 Automatic AI code reviews with PR summaries and line-by-line suggestions.
 
 **Installation:**
+
 1. Go to [github.com/marketplace/coderabbit](https://github.com/marketplace/coderabbit)
 2. Install on your repository
 3. Add `.coderabbit.yaml` (optional):
@@ -824,6 +844,7 @@ reviews:
 ```
 
 **Features:**
+
 - ✅ Automatic PR summaries
 - ✅ Line-by-line code suggestions
 - ✅ Security vulnerability detection
@@ -836,6 +857,7 @@ reviews:
 Google's AI assistant with interactive commands in PRs.
 
 **Installation:**
+
 1. Go to [github.com/marketplace/gemini-code-assist](https://github.com/marketplace/gemini-code-assist)
 2. Install on your repository
 3. Create `.gemini/` folder for customization (optional)
@@ -1037,6 +1059,7 @@ Antigravity stores rules in `.agent/rules/`. When installing Git-Core Protocol:
 | Secrets/Credentials | **NEVER in repo** → `.env.local` |
 
 **Migration Script:**
+
 ```powershell
 # Analyze what would be migrated (dry run)
 ./scripts/migrate-ide-rules.ps1 -ProjectPath "." -DryRun
@@ -1054,6 +1077,7 @@ AGENTS.md                  → Protocol rules (all projects)
 ```
 
 **The agent reads ALL files**, so:
+
 - Keep project-specific patterns in IDE rules
 - Keep protocol rules in AGENTS.md
 - Keep decisions in ARCHITECTURE.md
@@ -1089,4 +1113,3 @@ AGENTS.md                  → Protocol rules (all projects)
 
 *Protocol Version: 1.4.0*
 *Last Updated: 2025*
-

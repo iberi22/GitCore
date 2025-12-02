@@ -5,7 +5,7 @@ id: "doc-readme"
 created: 2025-12-01
 updated: 2025-12-02
 agent: copilot
-model: claude-opus-4
+model: claude-opus-4.5
 requested_by: system
 summary: |
   Project overview, quick start guide, and core principles of the Git-Core Protocol.
@@ -203,6 +203,7 @@ Automated PR analysis using multiple AI models:
 ### Report Contents
 
 The AI report includes:
+
 - 🔍 **Summary of Changes** (bullet points)
 - 📊 **Impact Analysis** (High/Medium/Low with justification)
 - ⚠️ **Potential Risks**
@@ -529,6 +530,7 @@ Análisis automatizado de PRs usando múltiples modelos de IA:
 ### Contenido del Reporte
 
 El reporte AI incluye:
+
 - 🔍 **Resumen de Cambios** (puntos clave)
 - 📊 **Análisis de Impacto** (Alto/Medio/Bajo con justificación)
 - ⚠️ **Posibles Riesgos**
