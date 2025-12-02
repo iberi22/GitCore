@@ -46,7 +46,7 @@ fn generate_summary_report(analyses: &[crate::github::WorkflowAnalysis], format:
     let success = analyses.iter().filter(|a| a.run.conclusion.as_deref() == Some("success")).count();
     let failed = analyses.iter().filter(|a| a.run.conclusion.as_deref() == Some("failure")).count();
     let cancelled = analyses.iter().filter(|a| a.run.conclusion.as_deref() == Some("cancelled")).count();
-    
+
     let total_duration: i64 = analyses.iter().filter_map(|a| a.duration_seconds).sum();
     let avg_duration = if total > 0 { total_duration / total as i64 } else { 0 };
 
@@ -89,7 +89,7 @@ fn generate_detailed_report(analyses: &[crate::github::WorkflowAnalysis], format
             println!("## Runs\n");
             println!("| Workflow | Run ID | Status | Duration | Errors |");
             println!("|----------|--------|--------|----------|--------|");
-            
+
             for analysis in analyses {
                 println!("| {} | {} | {} | {}s | {} |",
                     analysis.run.name,
@@ -125,7 +125,7 @@ fn generate_detailed_report(analyses: &[crate::github::WorkflowAnalysis], format
                     "warnings": a.warnings
                 })
             }).collect();
-            
+
             println!("{}", serde_json::to_string_pretty(&report).unwrap());
         }
         _ => {
@@ -137,14 +137,14 @@ fn generate_detailed_report(analyses: &[crate::github::WorkflowAnalysis], format
                     Some("cancelled") => "⏹️",
                     _ => "🔄",
                 };
-                
+
                 println!("{} {} (Run #{}) - {}s",
                     status_icon,
                     analysis.run.name,
                     analysis.run.id,
                     analysis.duration_seconds.unwrap_or(0)
                 );
-                
+
                 if !analysis.errors.is_empty() {
                     for error in &analysis.errors {
                         println!("   ⚠️  {}", error);
@@ -167,7 +167,7 @@ fn generate_diff_report(analyses: &[crate::github::WorkflowAnalysis], format: &s
     let recent_avg_duration: i64 = recent.iter()
         .filter_map(|a| a.duration_seconds)
         .sum::<i64>() / recent.len().max(1) as i64;
-    
+
     let older_avg_duration: i64 = older.iter()
         .filter_map(|a| a.duration_seconds)
         .sum::<i64>() / older.len().max(1) as i64;

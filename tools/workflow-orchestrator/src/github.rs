@@ -156,7 +156,7 @@ impl GitHubClient {
     /// Get all workflow runs with parallel job fetching
     pub async fn get_workflow_runs(&self, per_page: u32) -> Result<Vec<WorkflowRun>> {
         let url = self.api_url(&format!("/actions/runs?per_page={}", per_page));
-        
+
         let response: WorkflowRunsResponse = self.client
             .get(&url)
             .send()
@@ -171,9 +171,9 @@ impl GitHubClient {
     /// Get jobs for a workflow run
     pub async fn get_jobs(&self, run_id: u64) -> Result<Vec<Job>> {
         let _permit = self.semaphore.acquire().await?;
-        
+
         let url = self.api_url(&format!("/actions/runs/{}/jobs", run_id));
-        
+
         let response: JobsResponse = self.client
             .get(&url)
             .send()
@@ -187,7 +187,7 @@ impl GitHubClient {
     /// Get all workflows
     pub async fn get_workflows(&self) -> Result<Vec<Workflow>> {
         let url = self.api_url("/actions/workflows");
-        
+
         let response: WorkflowsResponse = self.client
             .get(&url)
             .send()
@@ -201,9 +201,9 @@ impl GitHubClient {
     /// Get logs for a job (returns URL, actual download is separate)
     pub async fn get_job_logs(&self, job_id: u64) -> Result<String> {
         let _permit = self.semaphore.acquire().await?;
-        
+
         let url = self.api_url(&format!("/actions/jobs/{}/logs", job_id));
-        
+
         let response = self.client
             .get(&url)
             .send()
@@ -228,7 +228,7 @@ impl GitHubClient {
         }).collect();
 
         let results = join_all(futures).await;
-        
+
         let analyses: Vec<WorkflowAnalysis> = results
             .into_iter()
             .filter_map(|r| r.ok())
@@ -241,17 +241,17 @@ impl GitHubClient {
     /// Analyze a single workflow run
     async fn analyze_single_run(&self, run: WorkflowRun) -> Result<WorkflowAnalysis> {
         debug!("Analyzing run #{}: {}", run.id, run.name);
-        
+
         let jobs = self.get_jobs(run.id).await.unwrap_or_default();
-        
+
         let mut errors = Vec::new();
         let mut warnings = Vec::new();
-        
+
         // Collect errors and warnings from jobs
         for job in &jobs {
             if job.conclusion.as_deref() == Some("failure") {
                 errors.push(format!("Job '{}' failed", job.name));
-                
+
                 if let Some(steps) = &job.steps {
                     for step in steps {
                         if step.conclusion.as_deref() == Some("failure") {
@@ -260,7 +260,7 @@ impl GitHubClient {
                     }
                 }
             }
-            
+
             if job.conclusion.as_deref() == Some("cancelled") {
                 warnings.push(format!("Job '{}' was cancelled", job.name));
             }
@@ -291,7 +291,7 @@ impl GitHubClient {
     /// Create a PR with validation results
     pub async fn create_pr(&self, title: &str, body: &str, branch: &str) -> Result<PRResponse> {
         let url = self.api_url("/pulls");
-        
+
         let request = CreatePRRequest {
             title: title.to_string(),
             body: body.to_string(),
@@ -314,7 +314,7 @@ impl GitHubClient {
     /// Add comment to PR
     pub async fn add_pr_comment(&self, pr_number: u64, body: &str) -> Result<()> {
         let url = self.api_url(&format!("/issues/{}/comments", pr_number));
-        
+
         let request = CreateIssueCommentRequest {
             body: body.to_string(),
         };
@@ -331,7 +331,7 @@ impl GitHubClient {
     /// Create a branch
     pub async fn create_branch(&self, branch_name: &str, from_sha: &str) -> Result<()> {
         let url = format!("https://api.github.com/repos/{}/{}/git/refs", self.owner, self.repo);
-        
+
         let body = serde_json::json!({
             "ref": format!("refs/heads/{}", branch_name),
             "sha": from_sha
@@ -349,12 +349,12 @@ impl GitHubClient {
     /// Get default branch SHA
     pub async fn get_default_branch_sha(&self) -> Result<String> {
         let url = self.api_url("/git/refs/heads/main");
-        
+
         #[derive(Deserialize)]
         struct RefResponse {
             object: RefObject,
         }
-        
+
         #[derive(Deserialize)]
         struct RefObject {
             sha: String,

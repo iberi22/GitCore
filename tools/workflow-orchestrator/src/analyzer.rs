@@ -57,7 +57,7 @@ pub async fn run_analysis(
 
     // Fetch all runs in parallel batches
     let runs = client.get_workflow_runs(50).await?;
-    
+
     // Filter runs based on criteria
     let runs_to_analyze: Vec<WorkflowRun> = if include_success {
         runs
@@ -117,7 +117,7 @@ pub async fn health_check(client: &GitHubClient, quick: bool) -> Result<()> {
     } else {
         // Deep check - analyze recent runs for each workflow
         let runs = client.get_workflow_runs(100).await?;
-        
+
         // Group runs by workflow
         let mut workflow_runs: HashMap<u64, Vec<&WorkflowRun>> = HashMap::new();
         for run in &runs {
@@ -148,11 +148,11 @@ pub async fn health_check(client: &GitHubClient, quick: bool) -> Result<()> {
                     else if health >= 70.0 { "🟡" }
                     else { "🔴" };
 
-                println!("{:<40} {:>8} {:>8} {:>8} {:>6.1}% {}", 
+                println!("{:<40} {:>8} {:>8} {:>8} {:>6.1}% {}",
                     &wf.name[..wf.name.len().min(40)],
                     success, failed, total, health, health_icon);
             } else {
-                println!("{:<40} {:>8} {:>8} {:>8} {:>10}", 
+                println!("{:<40} {:>8} {:>8} {:>8} {:>10}",
                     &wf.name[..wf.name.len().min(40)],
                     "-", "-", "0", "N/A");
             }
@@ -184,7 +184,7 @@ async fn build_analysis_result(
     for analysis in analyses {
         for error in &analysis.errors {
             *error_freq.entry(error.clone()).or_insert(0) += 1;
-            
+
             for job in &analysis.jobs {
                 if job.conclusion.as_deref() == Some("failure") {
                     errors.push(ErrorReport {
@@ -236,7 +236,7 @@ async fn build_analysis_result(
 
     // Generate recommendations
     let mut recommendations = Vec::new();
-    
+
     if failed > 0 {
         recommendations.push(format!(
             "🔴 {} workflow runs failed. Review error logs for root cause.",
@@ -278,7 +278,7 @@ async fn build_analysis_result(
 fn calculate_parallel_efficiency(analyses: &[WorkflowAnalysis]) -> f64 {
     // Calculate how well jobs are parallelized
     // Efficiency = (sum of job durations) / (total workflow duration * num_jobs)
-    
+
     let mut total_efficiency = 0.0;
     let mut count = 0;
 
@@ -307,7 +307,7 @@ fn print_terminal_report(result: &AnalysisResult) {
     println!("\n╔════════════════════════════════════════════════════════════════╗");
     println!("║              📊 WORKFLOW ANALYSIS REPORT                        ║");
     println!("╠════════════════════════════════════════════════════════════════╣");
-    println!("║ Total Runs: {:>6}  │  ✅ Success: {:>4}  │  ❌ Failed: {:>4}  ║", 
+    println!("║ Total Runs: {:>6}  │  ✅ Success: {:>4}  │  ❌ Failed: {:>4}  ║",
         result.total_runs, result.successful, result.failed);
     println!("╠════════════════════════════════════════════════════════════════╣");
     println!("║ 📈 Performance                                                  ║");
@@ -318,14 +318,14 @@ fn print_terminal_report(result: &AnalysisResult) {
     println!("║   Parallel Efficiency: {:>5.1}%                                  ║",
         result.performance.parallel_efficiency * 100.0);
     println!("╠════════════════════════════════════════════════════════════════╣");
-    
+
     if !result.recommendations.is_empty() {
         println!("║ 💡 Recommendations                                              ║");
         for rec in &result.recommendations {
             println!("║   • {}  ", &rec[..rec.len().min(55)]);
         }
     }
-    
+
     println!("╚════════════════════════════════════════════════════════════════╝\n");
 }
 
@@ -346,7 +346,7 @@ fn print_markdown_report(result: &AnalysisResult) {
     println!("| Max Duration | {}s |", result.performance.max_duration_seconds);
     println!("| Parallel Efficiency | {:.1}% |", result.performance.parallel_efficiency * 100.0);
     println!();
-    
+
     if !result.recommendations.is_empty() {
         println!("## Recommendations\n");
         for rec in &result.recommendations {

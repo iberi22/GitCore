@@ -1,5 +1,5 @@
 //! # Workflow Orchestrator
-//! 
+//!
 //! High-performance parallel workflow orchestrator for Git-Core Protocol.
 //! Executes GitHub Actions analysis, validation, and continuous improvement tasks
 //! with maximum parallelism using Tokio.
@@ -109,7 +109,7 @@ enum Commands {
 #[tokio::main]
 async fn main() -> Result<()> {
     dotenv::dotenv().ok();
-    
+
     let cli = Cli::parse();
 
     // Setup logging
@@ -124,7 +124,7 @@ async fn main() -> Result<()> {
 
     let token = cli.token.or_else(|| std::env::var("GITHUB_TOKEN").ok())
         .expect("GITHUB_TOKEN required");
-    
+
     let repo = cli.repo.or_else(|| std::env::var("GITHUB_REPOSITORY").ok())
         .expect("Repository required (--repo or GITHUB_REPOSITORY)");
 

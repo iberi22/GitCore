@@ -20,7 +20,7 @@ where
 {
     let semaphore = Arc::new(Semaphore::new(max_concurrent));
     let f = Arc::new(f);
-    
+
     let futures: Vec<_> = items
         .into_iter()
         .map(|item| {
@@ -93,7 +93,7 @@ where
     Fut: Future<Output = Result<U, E>> + Send + 'static,
 {
     let semaphore = Arc::new(Semaphore::new(max_concurrent));
-    
+
     let futures: Vec<_> = items
         .into_iter()
         .map(|item| {

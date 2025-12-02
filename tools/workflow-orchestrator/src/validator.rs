@@ -66,7 +66,7 @@ pub async fn post_run_validation(
 
     let target_id: u64 = run_id.parse()?;
     let runs = client.get_workflow_runs(20).await?;
-    
+
     let run = runs.into_iter()
         .find(|r| r.id == target_id)
         .ok_or_else(|| anyhow::anyhow!("Run {} not found", run_id))?;
@@ -81,13 +81,13 @@ pub async fn post_run_validation(
     // Create branch for validation PR
     let branch_name = format!("validation/run-{}-{}", run_id, Utc::now().format("%Y%m%d%H%M%S"));
     let sha = client.get_default_branch_sha().await?;
-    
+
     // Try to create branch (may fail if already exists)
     let _ = client.create_branch(&branch_name, &sha).await;
 
     // Create PR with validation results
     let pr_body = generate_pr_body(&report, &analysis, ai_review);
-    
+
     let pr = client.create_pr(
         &format!("🔬 Validation: {} - Run #{}", analysis.run.name, run_id),
         &pr_body,
@@ -161,7 +161,7 @@ impl ValidationReport {
         for job in &analysis.jobs {
             if job.conclusion.as_deref() == Some("failure") {
                 failed_jobs += 1;
-                
+
                 if let Some(steps) = &job.steps {
                     for step in steps {
                         step_count += 1;
@@ -244,11 +244,11 @@ impl ValidationReport {
 
     pub fn to_markdown(&self) -> String {
         let mut md = String::new();
-        
+
         md.push_str(&format!("# 🔬 Validation Report: {}\n\n", self.workflow_name));
-        md.push_str(&format!("**Run ID:** {} | **Status:** {} | **Conclusion:** {}\n\n", 
+        md.push_str(&format!("**Run ID:** {} | **Status:** {} | **Conclusion:** {}\n\n",
             self.run_id, self.status, self.conclusion));
-        
+
         md.push_str("## 📊 Metrics\n\n");
         md.push_str("| Metric | Value |\n");
         md.push_str("|--------|-------|\n");
@@ -288,11 +288,11 @@ impl ValidationReport {
         let mut out = String::new();
         out.push_str(&format!("\n📋 Validation Report: {}\n", self.workflow_name));
         out.push_str(&format!("   Run #{} | {} | {}\n", self.run_id, self.status, self.conclusion));
-        out.push_str(&format!("   Duration: {}s | Jobs: {} | Errors: {}\n", 
-            self.duration_seconds.unwrap_or(0), 
+        out.push_str(&format!("   Duration: {}s | Jobs: {} | Errors: {}\n",
+            self.duration_seconds.unwrap_or(0),
             self.metrics.job_count,
             self.errors.len()));
-        out.push_str(&format!("   Performance: {:.1}% | Security: {:.1}%\n", 
+        out.push_str(&format!("   Performance: {:.1}% | Security: {:.1}%\n",
             self.performance_score, self.security_score));
         out
     }
@@ -300,7 +300,7 @@ impl ValidationReport {
 
 fn suggest_fix(step_name: &str) -> Option<String> {
     let name_lower = step_name.to_lowercase();
-    
+
     if name_lower.contains("checkout") {
         Some("Check repository permissions and branch existence".to_string())
     } else if name_lower.contains("install") || name_lower.contains("setup") {
@@ -322,7 +322,7 @@ fn estimate_parallel_jobs(jobs: &[crate::github::Job]) -> usize {
     if jobs.len() <= 1 {
         return 0;
     }
-    
+
     // For now, assume ~50% parallelism if multiple jobs
     jobs.len() / 2
 }
@@ -359,7 +359,7 @@ fn generate_validation_report(analyses: &[WorkflowAnalysis]) -> ValidationReport
 
 fn generate_pr_body(report: &ValidationReport, analysis: &WorkflowAnalysis, ai_review: bool) -> String {
     let mut body = String::new();
-    
+
     body.push_str("## 🔬 Workflow Validation Report\n\n");
     body.push_str(&format!("**Workflow:** {}\n", report.workflow_name));
     body.push_str(&format!("**Run ID:** [#{}]({})\n", report.run_id, analysis.run.html_url));
@@ -369,15 +369,15 @@ fn generate_pr_body(report: &ValidationReport, analysis: &WorkflowAnalysis, ai_r
     body.push_str("### 📊 Scores\n\n");
     body.push_str("| Category | Score | Status |\n");
     body.push_str("|----------|-------|--------|\n");
-    body.push_str(&format!("| Performance | {:.1}% | {} |\n", 
+    body.push_str(&format!("| Performance | {:.1}% | {} |\n",
         report.performance_score,
         if report.performance_score >= 80.0 { "✅" } else if report.performance_score >= 60.0 { "🟡" } else { "🔴" }
     ));
-    body.push_str(&format!("| Security | {:.1}% | {} |\n", 
+    body.push_str(&format!("| Security | {:.1}% | {} |\n",
         report.security_score,
         if report.security_score >= 80.0 { "✅" } else if report.security_score >= 60.0 { "🟡" } else { "🔴" }
     ));
-    body.push_str(&format!("| Reliability | {:.1}% | {} |\n\n", 
+    body.push_str(&format!("| Reliability | {:.1}% | {} |\n\n",
         ((report.metrics.job_count - report.metrics.failed_jobs) as f64 / report.metrics.job_count.max(1) as f64) * 100.0,
         if report.metrics.failed_jobs == 0 { "✅" } else { "🔴" }
     ));
@@ -430,12 +430,12 @@ async fn create_validation_pr(
 
     let analysis = &analyses[0];
     let branch_name = format!("validation/batch-{}", Utc::now().format("%Y%m%d%H%M%S"));
-    
+
     let sha = client.get_default_branch_sha().await?;
     let _ = client.create_branch(&branch_name, &sha).await;
 
     let pr_body = generate_pr_body(report, analysis, true);
-    
+
     let pr = client.create_pr(
         &format!("🔬 Validation Report: {} runs analyzed", analyses.len()),
         &pr_body,
