@@ -20,7 +20,7 @@ project: Git-Core-Protocol
 > **AI-Driven Project Management Template** — *By Devs, For Devs*
 
 [![Use this template](https://img.shields.io/badge/Use%20this-template-blue?style=for-the-badge)](https://github.com/iberi22/Git-Core-Protocol/generate)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+[![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg?style=for-the-badge)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 [![AI Code Review](https://img.shields.io/badge/AI%20Review-CodeRabbit%20%2B%20Gemini-purple?style=for-the-badge)](https://github.com/marketplace/coderabbit)
 
 ---
@@ -740,7 +740,22 @@ curl -sL https://raw.githubusercontent.com/iberi22/Git-Core-Protocol/main/instal
 
 ## 📄 License | Licencia | Licença | Lizenz | Licence | ライセンス | 许可证
 
-MIT - Use it however you want | Úsalo como quieras | Use como quiser | Verwende es wie du willst | Utilisez-le comme vous voulez | 好きなように使ってください | 随意使用
+**CC BY-NC-SA 4.0** - Attribution-NonCommercial-ShareAlike
+
+✅ **You CAN:**
+- Use it for personal/educational projects
+- Modify and adapt it
+- Share it with attribution
+
+❌ **You CANNOT:**
+- Sell it or use it commercially without permission
+- Remove attribution to Git-Core Protocol
+
+**Attribution Required:** "This project uses Git-Core Protocol by @iberi22"
+
+For commercial use, contact: https://github.com/iberi22
+
+Full license: [LICENSE](LICENSE)
 
 ---
 
