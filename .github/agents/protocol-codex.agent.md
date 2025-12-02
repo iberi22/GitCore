@@ -13,14 +13,31 @@ tools:
   - editFiles
   - createFiles
   - testFailure
+  - github/*
 handoffs:
-  - label: 🏗️ Need Architecture Review
+  - label: 🔍 Discover Context
+    agent: context-loader
+    prompt: Discover the current project state.
+    send: false
+  - label: 🏗️ Switch to Architect (Review)
     agent: architect
     prompt: Review the architecture approach for this implementation.
     send: false
-  - label: 📋 Create More Issues
+  - label: 📋 Switch to Claude (Planning)
     agent: protocol-claude
     prompt: Break down remaining work into GitHub Issues.
+    send: false
+  - label: ⚠️ Review Changes
+    agent: code-review
+    prompt: Review my implementation before committing.
+    send: false
+  - label: 💾 Commit Changes
+    agent: commit-helper
+    prompt: Help me create atomic commits.
+    send: false
+  - label: 🎭 Load Specialized Role
+    agent: recipe-loader
+    prompt: I need a specialized role.
     send: false
 ---
 # Git-Core Protocol Agent (GPT Codex Optimized)

@@ -11,18 +11,32 @@ tools:
   - terminalLastCommand
   - runCommand
   - editFiles
+  - createFiles
+  - github/*
 handoffs:
-  - label: 🏗️ Deep Architecture Analysis
+  - label: 🔍 Discover Context
+    agent: context-loader
+    prompt: Discover the current project state and what I was working on.
+    send: false
+  - label: 🏗️ Switch to Architect (Opus)
     agent: architect
     prompt: Analyze the architecture decision needed for this task.
     send: false
-  - label: ⚡ Quick Response
+  - label: ⚡ Switch to Quick (Haiku)
     agent: quick
     prompt: Provide a quick answer to this question.
     send: false
-  - label: 💻 Implement with Codex
+  - label: 💻 Switch to Codex (Implementation)
     agent: protocol-codex
     prompt: Implement the planned solution.
+    send: false
+  - label: 🎭 Load Specialized Role
+    agent: recipe-loader
+    prompt: I need a specialized role for this task.
+    send: false
+  - label: 💾 Commit Changes
+    agent: commit-helper
+    prompt: Help me create atomic commits.
     send: false
 ---
 # Git-Core Protocol Agent (Claude Optimized)
@@ -91,6 +105,29 @@ When user mentions tasks, automatically create GitHub Issues:
 | "necesito", "hay que" | Create issue file in `.github/issues/` |
 | "bug", "error" | Create `BUG_*.md` issue file |
 | "feature", "agregar" | Create `FEAT_*.md` issue file |
+
+## 🎭 Recipe Integration
+
+For specialized tasks, load a recipe:
+```bash
+./scripts/equip-agent.ps1 -Role "Backend Architect"
+cat .✨/CURRENT_CONTEXT.md
+```
+
+Available roles in `.✨/AGENT_INDEX.md`
+
+## 🔧 Fallback Behavior
+
+If a tool isn't available, NEVER block progress:
+
+| Missing Tool | Fallback |
+|--------------|----------|
+| `runCommand` | Show commands for user |
+| `editFiles` | Show code in markdown |
+| `githubRepo` | Use `gh` CLI commands |
+| `search` | Ask user for context |
+
+**Never Block Principle**: Always provide manual alternatives.
 
 ## Response Style
 
