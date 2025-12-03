@@ -17,17 +17,31 @@ project: Git-Core-Protocol
 
 # 🧠 Git-Core Protocol
 
-> **"Inteligente, sofisticada pero minimalista en complejidad"**
->
-> *AI-Driven Project Management Template — By Devs, For Devs*
-
 [![Use this template](https://img.shields.io/badge/Use%20this-template-blue?style=for-the-badge)](https://github.com/iberi22/Git-Core-Protocol/generate)
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg?style=for-the-badge)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 [![AI Code Review](https://img.shields.io/badge/AI%20Review-CodeRabbit%20%2B%20Gemini-purple?style=for-the-badge)](https://github.com/marketplace/coderabbit)
 
+<img src="logo.png" alt="Git-Core Protocol Infographic" width="500" style="display: block; margin: 0 auto;">
+
+<!-- <img src="infographic.png" alt="Git-Core Protocol - How to Install and Use" width="500" style="display: block; margin: 20px auto;"> -->
+
+<div align="center">
+
+| Git-Core Protocol | Compliance | Detail                                      |
+|--------------------------------|------------|---------------------------------------------|
+| Defined rules                  | ✅          | AGENTS.md, copilot-instructions.md           |
+| Syntax                         | ✅          | Issue format, conventional commits           |
+| Semantics                      | ✅          | Labels, states, workflows                    |
+| Synchronization                 | ✅          | GitHub Issues as state, workflows            |
+| Entities communicating          | ✅          | Human ↔ AI Agent ↔ GitHub                    |
+
+</div>
+
 ---
 
 ## 🌍 Language | Idioma | Língua | Sprache | Langue | 言語 | 语言
+
+<div align="center">
 
 | Flag | Language | Link |
 |:----:|----------|------|
@@ -38,6 +52,8 @@ project: Git-Core-Protocol
 | 🇫🇷 | **Français** | [Aller au Français](#-français) |
 | 🇯🇵 | **日本語** | [日本語へ](#-日本語) |
 | 🇨🇳 | **中文** | [跳转到中文](#-中文) |
+
+</div>
 
 ---
 
@@ -109,6 +125,8 @@ The system automatically:
 
 Custom VS Code Copilot agents optimized for different LLM models:
 
+<div align="center">
+
 | Agent | Model | Best For | Context |
 |-------|-------|----------|---------|
 | `@protocol-claude` | Claude Sonnet 4 | Standard tasks, reasoning | 200K |
@@ -118,6 +136,8 @@ Custom VS Code Copilot agents optimized for different LLM models:
 | `@protocol-codex` | GPT-5.1 Codex | Implementation, coding | - |
 | `@protocol-grok` | Grok Code Fast 1 | Massive codebase analysis | **2M** |
 | `@router` | Auto | Agent selection helper | - |
+
+</div>
 
 ### Usage in VS Code
 
@@ -214,6 +234,39 @@ Reports are automatically posted as PR comments.
 
 ---
 
+## 📤 Session Export (New in v1.5!)
+
+Continue your work in a new chat window **without losing context**.
+
+### Quick Usage
+
+1. Click **📤 Export Session** button in any agent
+2. The agent asks for a brief summary
+3. It generates a file and **copies to clipboard automatically**
+4. In new chat: **Ctrl+V** → Enter → Continue!
+
+### What Gets Exported
+
+| Included | Not Included |
+|----------|--------------|
+| ✅ Git branch & status | ❌ Full conversation |
+| ✅ Recent commits | ❌ Sensitive data |
+| ✅ Open issues | ❌ Large code blocks |
+| ✅ What was completed | |
+| ✅ What's pending | |
+| ✅ Technical context | |
+
+### Script Usage
+
+```powershell
+./scripts/export-session.ps1 -Summary "OAuth implementation" -Topic "oauth"
+# Output: #file:docs/prompts/SESSION_2025-12-02_oauth.md (copied to clipboard!)
+```
+
+📖 **Full documentation:** [docs/SESSION_EXPORT.md](docs/SESSION_EXPORT.md)
+
+---
+
 ## Why This Approach?
 
 | Problem | Git-Core Solution |
@@ -289,12 +342,16 @@ git-core migrate
 
 **Method Comparison:**
 
+<div align="center">
+
 | Method | Trust Level | Speed | Features |
 |--------|-------------|-------|----------|
 | Shell Scripts | ⭐⭐⭐⭐⭐ (visible code) | Fast | Basic |
 | Cargo install | ⭐⭐⭐⭐ (compiles locally) | Medium | Full |
 | Build from source | ⭐⭐⭐⭐⭐ (maximum control) | Slow | Full |
 | Pre-built binary | ⭐⭐⭐ (verify checksum) | Very Fast | Full |
+
+</div>
 
 ## 📂 Structure
 
