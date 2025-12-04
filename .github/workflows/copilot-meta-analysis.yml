@@ -3,6 +3,9 @@ name: "🧠 Copilot Meta-Analysis"
 # Triggers when AI bots complete their reviews
 # Assigns Copilot for final meta-analysis using Claude Sonnet 4.5
 
+env:
+  PROTOCOL_VERSION: "1.3.0"
+
 on:
   # React to PR comments (bot reviews)
   issue_comment:
@@ -10,13 +13,13 @@ on:
 
   # Scheduled check for pending analyses
   schedule:
-    - cron: '*/30 * * * *'  # Every 30 minutes
+    - cron: "*/30 * * * *" # Every 30 minutes
 
   # Manual trigger
   workflow_dispatch:
     inputs:
       pr_number:
-        description: 'PR number to analyze'
+        description: "PR number to analyze"
         required: true
         type: number
 
@@ -55,11 +58,14 @@ jobs:
           fi
 
           # Find PRs with validation label awaiting Copilot
+          echo "Fetching PRs..."
           VALIDATION_PRS=$(gh pr list \
             --label "validation,ai-review-requested" \
             --state open \
             --json number,comments,createdAt \
-            --jq '.')
+            --jq '.' || echo "[]")
+
+          echo "Found PRs: $VALIDATION_PRS"
 
           # Use temp file to avoid subshell issue with while loop
           READY_PRS="[]"

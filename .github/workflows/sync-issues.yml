@@ -4,11 +4,14 @@
 
 name: Sync Issues from Files
 
+env:
+  PROTOCOL_VERSION: "1.3.0"
+
 on:
   # Cuando se modifican archivos en la carpeta de issues
   push:
     paths:
-      - '.github/issues/*.md'
+      - ".github/issues/*.md"
     branches:
       - main
 
@@ -20,9 +23,9 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: 'Action to perform'
+        description: "Action to perform"
         required: true
-        default: 'sync'
+        default: "sync"
         type: choice
         options:
           - sync
@@ -31,7 +34,7 @@ on:
 
   # Periódicamente para limpiar issues cerrados
   schedule:
-    - cron: '0 */6 * * *'  # Cada 6 horas
+    - cron: "0 */6 * * *" # Cada 6 horas
 
 permissions:
   contents: write

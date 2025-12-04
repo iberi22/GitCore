@@ -7,33 +7,33 @@ name: 🌐 Living Context Protocol
 on:
   # Weekly scheduled run
   schedule:
-    - cron: '0 8 * * 1' # Every Monday at 8am UTC
+    - cron: "0 8 * * 1" # Every Monday at 8am UTC
 
   # Manual trigger with options
   workflow_dispatch:
     inputs:
       request_ai_review:
-        description: 'Request AI agents to review the context'
+        description: "Request AI agents to review the context"
         required: false
         default: true
         type: boolean
       specific_deps:
-        description: 'Comma-separated list of specific deps to analyze (empty = all)'
+        description: "Comma-separated list of specific deps to analyze (empty = all)"
         required: false
-        default: ''
+        default: ""
         type: string
 
   # Trigger on manifest changes
   push:
     paths:
-      - 'Cargo.toml'
-      - 'package.json'
-      - 'requirements.txt'
-      - 'pyproject.toml'
-      - 'go.mod'
-      - 'Gemfile'
-      - 'pom.xml'
-      - 'build.gradle'
+      - "Cargo.toml"
+      - "package.json"
+      - "requirements.txt"
+      - "pyproject.toml"
+      - "go.mod"
+      - "Gemfile"
+      - "pom.xml"
+      - "build.gradle"
 
   # Trigger when dependency PRs graduate from quarantine
   pull_request:
@@ -90,13 +90,16 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-context-
 
-      - name: 🔨 Build Context Research Agent
+      - name: 📥 Download or Build Context Research Agent
         run: |
-          if [ -d "tools/context-research-agent" ]; then
-            cargo build --release --manifest-path tools/context-research-agent/Cargo.toml
+          # Try to download pre-built binary first (faster)
+          if [ -f "bin/context-research-agent-linux" ]; then
+            echo "✅ Found pre-built binary in bin/"
+            cp bin/context-research-agent-linux tools/context-research-agent/target/release/context-research-agent
+            chmod +x tools/context-research-agent/target/release/context-research-agent
           else
-            echo "⚠️ Context Research Agent not found, skipping build"
-            exit 0
+            echo "⚠️ Pre-built binary not found, compiling from source..."
+            cargo build --release --manifest-path tools/context-research-agent/Cargo.toml
           fi
 
       - name: 🧠 Run Research Agent
@@ -291,7 +294,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ env.CONTEXT_PR_BRANCH }}
-      
+
       - name: Check for Graduated Dependencies
         id: check
         env:
@@ -299,19 +302,19 @@ jobs:
         run: |
           # Check for PRs that have passed quarantine (14 days old)
           CUTOFF_DATE=$(date -d "-14 days" +%Y-%m-%d)
-          
+
           GRADUATED=$(gh pr list \
             --label "quarantine" \
             --state open \
             --json number,title,createdAt \
             --jq "[.[] | select(.createdAt < \"${CUTOFF_DATE}T00:00:00Z\")]")
-          
+
           if [ "$(echo "$GRADUATED" | jq 'length')" -gt 0 ]; then
             echo "🔓 Found dependencies ready to graduate from quarantine:"
             echo "$GRADUATED" | jq -r '.[] | "  - #\(.number): \(.title)"'
             echo "has_graduated=true" >> $GITHUB_OUTPUT
             echo "graduated_deps=$GRADUATED" >> $GITHUB_OUTPUT
-            
+
             # Update labels on graduated PRs
             echo "$GRADUATED" | jq -r '.[].number' | while read PR_NUM; do
               gh pr edit "$PR_NUM" \
