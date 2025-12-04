@@ -16,6 +16,7 @@ tags: ["#ai-agents", "#tool-calling", "#research", "#git-core-protocol"]
 topics: [ai-agents, tool-calling, llm-capabilities]
 related_issues: []
 project: Git-Core-Protocol
+protocol_version: 1.3.0
 module: agent-docs
 language: markdown
 priority: high
@@ -104,6 +105,7 @@ complexity: high
    - Extended thinking available for complex reasoning
 
 ### Strengths
+
 - ✅ Excellent at following complex instructions
 - ✅ Strong coding capabilities
 - ✅ Native MCP support
@@ -111,6 +113,7 @@ complexity: high
 - ✅ Extended thinking for multi-step reasoning
 
 ### Weaknesses
+
 - ⚠️ Higher cost for Opus models
 - ⚠️ 1M context still in beta
 - ⚠️ May be verbose without explicit constraints
@@ -184,6 +187,7 @@ response = client.models.generate_content(
    - For manual management, preserve `thought_signature` in responses
 
 2. **Parallel Function Calling:**
+
    ```python
    # Multiple functions called in one response
    config = types.GenerateContentConfig(
@@ -199,6 +203,7 @@ response = client.models.generate_content(
    - SDK handles execution loop automatically
 
 ### Strengths
+
 - ✅ Massive 1M+ token context window
 - ✅ Native MCP support
 - ✅ Automatic function calling in Python SDK
@@ -206,6 +211,7 @@ response = client.models.generate_content(
 - ✅ Strong multimodal capabilities
 
 ### Weaknesses
+
 - ⚠️ Thought signatures add complexity for manual implementations
 - ⚠️ Auto function calling only in Python SDK
 - ⚠️ Limited OpenAPI schema subset support
@@ -261,6 +267,7 @@ response = client.chat.completions.create(
 ### Codex CLI Best Practices
 
 1. **Use AGENTS.md Files:**
+
    ```bash
    codex /init  # Create AGENTS.md with project context
    ```
@@ -290,6 +297,7 @@ response = client.chat.completions.create(
 | Shell | Built-in | Command execution |
 
 ### Strengths
+
 - ✅ Purpose-built for coding tasks
 - ✅ CLI and IDE integration
 - ✅ Cloud tasks for background work
@@ -297,6 +305,7 @@ response = client.chat.completions.create(
 - ✅ Strong agentic capabilities
 
 ### Weaknesses
+
 - ⚠️ Context window not publicly disclosed
 - ⚠️ Premium features require ChatGPT subscription
 - ⚠️ Windows support experimental (WSL recommended)
@@ -379,6 +388,7 @@ response = chat.sample()
    - Mix `system`, `user`, `assistant` roles freely
 
 ### Strengths
+
 - ✅ Massive 2M token context window
 - ✅ Lightning fast for tool calling
 - ✅ Native X/Twitter integration
@@ -386,6 +396,7 @@ response = chat.sample()
 - ✅ Remote MCP support
 
 ### Weaknesses
+
 - ⚠️ Grok 4 is reasoning-only (no non-reasoning mode)
 - ⚠️ Some parameters not supported (`presencePenalty`, `frequencyPenalty`, `stop`)
 - ⚠️ Knowledge cutoff November 2024

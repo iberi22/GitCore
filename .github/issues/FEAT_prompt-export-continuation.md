@@ -6,6 +6,7 @@ labels:
   - ai-workflow
   - protocol
 assignees: []
+protocol_version: 1.3.0
 ---
 github_issue: 48
 
@@ -16,6 +17,7 @@ Enable agents to export chat session context as `.md` files for continuation in 
 ## 🎯 Problem Statement
 
 When switching chat windows or starting new sessions, agents lose context. Currently there's no way to:
+
 1. Export current session state
 2. Load that state in a new session
 3. Continue work seamlessly
@@ -69,5 +71,5 @@ VS Code **does NOT provide an API** to programmatically insert text into the cha
 
 ## 📎 Related
 
-- VS Code Chat API: https://code.visualstudio.com/api/extension-guides/chat
+- VS Code Chat API: <https://code.visualstudio.com/api/extension-guides/chat>
 - Git-Core Protocol rules: AGENTS.md

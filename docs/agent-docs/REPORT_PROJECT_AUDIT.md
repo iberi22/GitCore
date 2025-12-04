@@ -15,6 +15,7 @@ tags: ["#audit", "#quality", "#maintenance"]
 topics: [project-health, technical-debt]
 related_issues: []
 project: Git-Core-Protocol
+protocol_version: 1.3.0
 priority: high
 status: completed
 confidence: 0.95
@@ -55,6 +56,7 @@ $IndexFile = ".ai/AGENT_INDEX.md"         # ❌ Debería ser .✨/
 ```
 
 **Solución:**
+
 ```powershell
 # CORRECTO:
 $RepoBaseUrl = "https://raw.githubusercontent.com/iberi22/agents-flows-recipes/main"
@@ -70,6 +72,7 @@ $IndexFile = "$ConfigDir/AGENT_INDEX.md"
 ### 2. Referencias a `.ai/` en Múltiples Archivos
 
 **Archivos afectados:**
+
 - `AGENTS.md` (líneas 63, 67, 74, 86, 95)
 - `.cursorrules` (línea 31)
 - `.windsurfrules` (línea 29)
@@ -78,11 +81,13 @@ $IndexFile = "$ConfigDir/AGENT_INDEX.md"
 **Problema:** Mezcla de referencias a `.ai/` y `.✨/`. La carpeta ahora es `.✨/`.
 
 **Ejemplo en `AGENTS.md`:**
+
 ```markdown
 1. `.ai/ARCHITECTURE.md` - Understand the system  # ❌ Debería ser .✨/
 ```
 
 **Solución:** Buscar y reemplazar todas las referencias:
+
 - `.ai/ARCHITECTURE.md` → `.✨/ARCHITECTURE.md`
 - `.ai/AGENT_INDEX.md` → `.✨/AGENT_INDEX.md`
 - `cat .ai/` → `cat .✨/`
@@ -94,6 +99,7 @@ $IndexFile = "$ConfigDir/AGENT_INDEX.md"
 **Archivo:** `.✨/ARCHITECTURE.md`
 
 **Problema:** El archivo referencia documentación que apunta a `.ai/`:
+
 ```markdown
 **Related Documentation:**
 - `AGENTS.md` - Architecture Verification Rule
@@ -113,6 +119,7 @@ Pero internamente dice `.ai/ARCHITECTURE.md` en lugar de `.✨/ARCHITECTURE.md`.
 **Impacto:** Usuarios de Linux/Mac no pueden "vestir" agentes.
 
 **Solución:** Crear `scripts/equip-agent.sh`:
+
 ```bash
 #!/bin/bash
 # equip-agent.sh - Linux/Mac version
@@ -126,6 +133,7 @@ REPO_URL="https://raw.githubusercontent.com/iberi22/agents-flows-recipes/main"
 ### 5. Documentación `.✨/ARCHITECTURE.md` Incompleta
 
 **Problema:** Secciones marcadas como "TBD":
+
 - Stack: Language, Framework, Database, Infrastructure = TBD
 - Dependencies: TBD
 - Security Considerations: TBD
@@ -141,6 +149,7 @@ REPO_URL="https://raw.githubusercontent.com/iberi22/agents-flows-recipes/main"
 **Problema:** El dispatcher no integra el sistema de "vestir agentes". Los agentes Copilot/Jules se activan sin contexto de rol.
 
 **Mejora propuesta:** Añadir paso que descargue y aplique receta según el tipo de issue:
+
 ```yaml
 - name: 🎭 Equip Agent with Role
   run: |
@@ -157,6 +166,7 @@ REPO_URL="https://raw.githubusercontent.com/iberi22/agents-flows-recipes/main"
 **Problema:** Existe `plan.md` en la raíz, lo cual viola la regla de "no archivos de planificación".
 
 **Solución:**
+
 - Migrar contenido a GitHub Issues
 - Eliminar el archivo
 
@@ -167,6 +177,7 @@ REPO_URL="https://raw.githubusercontent.com/iberi22/agents-flows-recipes/main"
 **Problema:** El archivo `CURRENT_CONTEXT.md` es generado dinámicamente y no debería commitearse.
 
 **Solución:** Añadir a `.gitignore`:
+
 ```gitignore
 # Agent context (generated)
 .✨/CURRENT_CONTEXT.md
@@ -179,6 +190,7 @@ REPO_URL="https://raw.githubusercontent.com/iberi22/agents-flows-recipes/main"
 ### 9. README.md con Lint Warnings
 
 **Problema:** El README tiene múltiples warnings de markdownlint:
+
 - MD022: Headings sin líneas en blanco
 - MD040: Code blocks sin lenguaje especificado
 - MD025: Múltiples H1 (por diseño multilenguaje)
@@ -204,6 +216,7 @@ REPO_URL="https://raw.githubusercontent.com/iberi22/agents-flows-recipes/main"
 **Problema:** No hay tests automatizados para el sistema de equipamiento.
 
 **Recomendación:** Añadir en CI:
+
 ```yaml
 - name: Test equip-agent script
   run: |
@@ -236,16 +249,19 @@ REPO_URL="https://raw.githubusercontent.com/iberi22/agents-flows-recipes/main"
 ## 📋 Plan de Acción Recomendado
 
 ### Prioridad Alta (Esta semana)
+
 1. [ ] Actualizar `equip-agent.ps1` para descargar recetas remotamente
 2. [ ] Reemplazar todas las referencias `.ai/` → `.✨/`
 3. [ ] Eliminar `plan.md` de la raíz
 
 ### Prioridad Media (Próximas 2 semanas)
+
 4. [ ] Crear `equip-agent.sh` para Linux/Mac
 5. [ ] Añadir `.✨/CURRENT_CONTEXT.md` a `.gitignore`
 6. [ ] Integrar equipamiento de rol en `agent-dispatcher.yml`
 
 ### Prioridad Baja (Backlog)
+
 7. [ ] Unificar idioma de archivos de reglas
 8. [ ] Completar secciones TBD en `ARCHITECTURE.md`
 9. [ ] Añadir tests para scripts
@@ -275,4 +291,3 @@ gh issue create --title "feat(scripts): Add equip-agent.sh for Linux/Mac" \
 ---
 
 *Informe generado automáticamente por GitHub Copilot siguiendo el Git-Core Protocol.*
-

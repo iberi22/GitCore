@@ -5,6 +5,7 @@ labels:
   - documentation
   - enhancement
   - workflow
+protocol_version: 1.3.0
 ---
 github_issue: 47
 

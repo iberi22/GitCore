@@ -8,6 +8,7 @@ labels:
   - ai-plan
   - enhancement
 assignees: []
+protocol_version: 1.3.0
 # assignees: ["@me", "copilot", "jules"]
 ---
 

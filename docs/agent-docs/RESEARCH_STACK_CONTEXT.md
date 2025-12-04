@@ -3,6 +3,7 @@ title: "Living Research Context"
 type: RESEARCH
 agent: context-research-agent
 updated: 2025-12-01
+protocol_version: 1.3.0
 ---
 
 # 🧠 Living Research Context
@@ -90,4 +91,3 @@ AI analysis unavailable. Check GitHub Models access.
 AI analysis unavailable. Check GitHub Models access.
 
 ---
-

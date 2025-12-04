@@ -13,6 +13,7 @@ summary: |
 keywords: [human-layer, high-stakes, approval, security]
 tags: ["#security", "#human-in-the-loop", "#protocol"]
 project: Git-Core-Protocol
+protocol_version: 1.3.0
 ---
 
 # 🛡️ HumanLayer Protocol

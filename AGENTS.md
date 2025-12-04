@@ -12,6 +12,7 @@ summary: |
 keywords: [agents, rules, workflow, configuration]
 tags: ["#configuration", "#agents", "#rules"]
 project: Git-Core-Protocol
+protocol_version: 1.3.0
 ---
 
 # 🤖 AGENTS.md - AI Agent Configuration
