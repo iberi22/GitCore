@@ -1,4 +1,5 @@
 ---
+github_issue: 48
 title: "Session Export for Chat Continuation"
 labels:
   - enhancement
@@ -6,6 +7,7 @@ labels:
   - protocol
 assignees: []
 ---
+github_issue: 48
 
 ## 📋 Feature Request
 

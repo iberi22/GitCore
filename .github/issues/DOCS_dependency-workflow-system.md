@@ -1,10 +1,12 @@
 ---
+github_issue: 47
 title: "Documentar sistema de workflows de dependencias"
 labels:
   - documentation
   - enhancement
   - workflow
 ---
+github_issue: 47
 
 ## 📋 Descripción
 
@@ -71,5 +73,6 @@ graph TD
 - [ ] Añadir ejemplos de uso manual
 
 ---
+github_issue: 47
 
 *Generado por análisis del sistema de workflows*
