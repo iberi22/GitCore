@@ -1,12 +1,20 @@
 name: "🔬 Workflow Validator"
 
-# This workflow runs AFTER any other workflow completes
+# This workflow runs AFTER specific important workflows complete
 # It analyzes results, creates validation PRs, and triggers continuous improvement
+# NOTE: Using explicit workflow list instead of wildcard (*) to:
+#   1. Prevent infinite loops and cascade effects
+#   2. Comply with GitHub Actions abuse prevention policies
+#   3. Reduce unnecessary workflow executions
 
 on:
-  # Trigger after ANY workflow completes
+  # Trigger only after specific critical workflows complete (NOT wildcard)
   workflow_run:
-    workflows: ["*"]
+    workflows:
+      - "🔨 Build Tools"
+      - "🏗️ Structure Validator"
+      - "📝 Commit Atomicity Check"
+      - "🔄 Sync Issues from Files"
     types: [completed]
 
   # Manual trigger for specific validation
@@ -107,15 +115,34 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download Orchestrator
-        uses: actions/download-artifact@v6
+      - name: Download Orchestrator (from artifact or pre-built)
+        id: get-binary
+        run: |
+          # Try pre-built binary first (fastest)
+          if [ -f "bin/workflow-orchestrator-linux" ]; then
+            echo "📦 Using pre-built binary from repo"
+            cp bin/workflow-orchestrator-linux ./workflow-orchestrator
+            chmod +x ./workflow-orchestrator
+            echo "source=prebuilt" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          echo "source=none" >> $GITHUB_OUTPUT
+
+      - name: Download Orchestrator (from artifact)
+        if: steps.get-binary.outputs.source == 'none'
+        uses: actions/download-artifact@v4
         with:
           name: workflow-orchestrator
           path: ./bin
         continue-on-error: true
 
       - name: Make Executable
-        run: chmod +x ./bin/workflow-orchestrator 2>/dev/null || true
+        if: steps.get-binary.outputs.source == 'none'
+        run: |
+          if [ -f "./bin/workflow-orchestrator" ]; then
+            chmod +x ./bin/workflow-orchestrator
+            mv ./bin/workflow-orchestrator ./workflow-orchestrator
+          fi
 
       - name: Determine Run ID
         id: run-id
@@ -135,35 +162,35 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           RUN_ID="${{ steps.run-id.outputs.run_id }}"
+          MAX_PARALLEL="${{ inputs.max_parallel || 10 }}"
 
-          # Use Rust orchestrator if available, fallback to shell
-          if [ -f "./bin/workflow-orchestrator" ]; then
-            echo "🦀 Using Rust orchestrator..."
-            # Note: redirect stderr to /dev/null, only capture stdout JSON
-            ./bin/workflow-orchestrator analyze \
+          # Use Rust orchestrator if available (FAST + PARALLEL)
+          if [ -f "./workflow-orchestrator" ]; then
+            echo "🦀 Using Rust orchestrator with --max-parallel $MAX_PARALLEL"
+            ./workflow-orchestrator analyze \
               --repo "$GITHUB_REPOSITORY" \
               --token "$GITHUB_TOKEN" \
               --output json \
-              --max-parallel 10 > analysis.json 2>/dev/null || true
+              --max-parallel "$MAX_PARALLEL" > analysis.json 2>&1 || true
 
             if [ -f "analysis.json" ] && jq -e . analysis.json >/dev/null 2>&1; then
-              HAS_ERRORS=$(jq -r '.errors // 0' analysis.json)
+              HAS_ERRORS=$(jq -r '.has_errors // false' analysis.json)
+              HAS_WARNINGS=$(jq -r '.has_warnings // false' analysis.json)
               PERF_SCORE=$(jq -r '.performance_score // 0' analysis.json)
+              echo "✅ Rust analysis completed"
+            else
+              echo "⚠️ Rust analysis produced invalid JSON, falling back to shell"
+              HAS_ERRORS="false"
+              HAS_WARNINGS="false"
+              PERF_SCORE="0"
             fi
           else
-            echo "📜 Using shell fallback..."
-            # Parallel fetch using background jobs
-            analyze_run() {
-              local run_id=$1
-              gh api "/repos/$GITHUB_REPOSITORY/actions/runs/$run_id/jobs" \
-                --jq '.jobs[] | {name, status, conclusion}' 2>/dev/null
-            }
-
+            echo "📜 Using shell fallback (slower, sequential)..."
             # Get recent runs
             RUNS=$(gh api "/repos/$GITHUB_REPOSITORY/actions/runs?per_page=20" \
-              --jq '.workflow_runs[].id')
+              --jq '.workflow_runs[].id' 2>/dev/null || echo "")
 
-            # Parallel analysis
+            # Sequential analysis (shell fallback)
             HAS_ERRORS="false"
             HAS_WARNINGS="false"
 

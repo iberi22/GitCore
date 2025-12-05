@@ -33,8 +33,9 @@ on:
           - pull-only
 
   # Periódicamente para limpiar issues cerrados
+  # Using minute 23 to avoid hourly peak congestion
   schedule:
-    - cron: "0 */6 * * *" # Cada 6 horas
+    - cron: "23 */6 * * *" # Every 6 hours at minute 23
 
 permissions:
   contents: write
