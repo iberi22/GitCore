@@ -25,24 +25,53 @@ This repository follows the **Git-Core Protocol** for AI-assisted development.
 
 ---
 
-## 🚀 Git-Core v2.0 Enhancements (NEW)
+## 🚀 Git-Core v2.1 (12-Factor Agents + ACP Patterns)
 
-**Implementación de lógicas "12-Factor Agents" y "HumanLayer":**
+**Implementación avanzada de lógicas "12-Factor Agents", "HumanLayer" y "Agent Control Plane":**
 
-### 1. Context Protocol (Stateless Reducer)
+### 1. Context Protocol (Stateless Reducer) ⭐ UPDATED
 
 Los agentes deben persistir su estado en los Issues usando bloques XML `<agent-state>`.
-👉 **Ver especificación:** `docs/agent-docs/CONTEXT_PROTOCOL.md`
+
+**Campos v2.1:**
+| Campo | Descripción |
+|-------|-------------|
+| `<intent>` | Objetivo de alto nivel |
+| `<step>` | Estado actual (`planning`, `coding`, `waiting_for_input`) |
+| `<plan>` | **NEW:** Lista de tareas dinámica (items con `done`/`in_progress`/`pending`) |
+| `<input_request>` | **NEW:** Solicitud de datos al humano (Human-as-Tool) |
+| `<metrics>` | **NEW:** Telemetría (`tool_calls`, `errors`, `cost_estimate`) |
+| `<memory>` | Datos JSON para retomar el trabajo |
+
+👉 **Ver especificación completa:** `docs/agent-docs/CONTEXT_PROTOCOL.md`
+
+**Helper Script:**
+```bash
+# Leer estado desde un Issue
+./scripts/agent-state.ps1 read -IssueNumber 42
+
+# Generar bloque XML
+./scripts/agent-state.ps1 write -Intent "fix_bug" -Step "coding" -Progress 50
+```
 
 ### 2. Micro-Agents (Personas)
 
 Los agentes deben adoptar roles específicos basados en las etiquetas (Labels) del Issue.
+
+| Label | Persona | Foco |
+|-------|---------|------|
+| `bug` | 🐛 The Fixer | Reproducir y corregir |
+| `enhancement` | ✨ Feature Dev | Arquitectura primero |
+| `high-stakes` | 👮 The Approver | Require "Proceder" |
+
 👉 **Ver especificación:** `docs/agent-docs/MICRO_AGENTS.md`
 
 ### 3. High Stakes Operations (Human-in-the-Loop)
 
 Para operaciones críticas (borrar datos, deploys, cambios de auth), el agente **DEBE PAUSAR** y solicitar confirmación explícita:
 > "⚠️ Esta es una operación de alto riesgo. Responde **'Proceder'** para continuar."
+
+👉 **Ver especificación:** `docs/agent-docs/HUMAN_LAYER_PROTOCOL.md`
 
 ---
 
@@ -165,12 +194,49 @@ Your state is GitHub Issues. Not memory. Not files. GitHub Issues.
 
 ## 🔄 The Loop (Workflow)
 
+### Phase 0: HEALTH CHECK (Anthropic Pattern - OBLIGATORIO)
+
+> ⚠️ **ANTES de implementar cualquier feature nuevo, verificar salud del proyecto.**
+>
+> Inspirado por: [Anthropic's "Effective harnesses for long-running agents"](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents)
+
+```bash
+# 1. Orientación básica
+pwd                              # Confirmar directorio de trabajo
+
+# 2. Estado del proyecto
+git log --oneline -10            # Ver trabajo reciente
+cat .✨/features.json            # Ver features y su estado (passes: true/false)
+
+# 3. Ejecutar tests existentes
+npm test                         # o: cargo test, pytest, etc.
+# Si hay FALLOS → ARREGLAR PRIMERO (prioridad máxima)
+# Si PASAN → Continuar a Phase 1
+
+# 4. Verificación E2E (si aplica)
+# Iniciar dev server y verificar funcionalidad básica
+npm run dev &
+# curl http://localhost:3000/health || exit 1
+```
+
+**Regla de Oro (Anthropic):**
+> "If the agent had started implementing a new feature [with existing bugs], it would likely make the problem worse."
+
 ### Phase 1: READ (Context Loading)
 
 ```bash
-# Always start here
+# 1. Arquitectura y decisiones críticas
 cat .✨/ARCHITECTURE.md
+
+# 2. Estado del agente en el issue asignado
 gh issue list --assignee "@me" --state open
+gh issue view <id> --comments | grep -A 50 '<agent-state>'
+
+# 3. Research context para dependencias
+cat docs/agent-docs/RESEARCH_STACK_CONTEXT.md
+
+# 4. Elegir feature de mayor prioridad que NO esté completado
+# (Revisar .✨/features.json → passes: false)
 ```
 
 ### Phase 2: ACT (Development)
