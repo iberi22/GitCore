@@ -2,7 +2,6 @@ name: 🛡️ Self-Healing CI/CD
 
 on:
   workflow_run:
-    workflows: ["*"]  # Monitorea TODOS los workflows del repo
     types:
       - completed
     branches:
@@ -16,8 +15,10 @@ permissions:
 jobs:
   analyze-failure:
     runs-on: ubuntu-latest
-    # Solo ejecutar si el workflow falló
-    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    # Solo ejecutar si el workflow falló Y NO es este mismo workflow
+    if: |
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.name != '🛡️ Self-Healing CI/CD'
     
     steps:
       - name: 🔍 Checkout Repository

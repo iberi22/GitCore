@@ -140,18 +140,26 @@ def process_messages(service):
             issue_data = parse_github_email(subject + " " + snippet, "")
             
             if issue_data:
-                # AQUÍ IRÍA LA LÓGICA DE REPARACIÓN
-                # 1. Verificar logs con `gh run view ...`
-                # 2. Intentar rerun o crear issue
-                logging.info(f"--> Acción requerida para {issue_data['repo']}")
+                # Verificar si el workflow ya está pasando
+                is_fixed = check_workflow_status(issue_data['repo'], issue_data['workflow'])
                 
-                # TODO: Implementar llamada a GH CLI
-                # subprocess.run(["gh", "run", "rerun", ...])
-                
-                # Si se resuelve (o se crea el issue), marcar como leído o eliminar
-                # mark_as_read(service, message['id'])
+                if is_fixed:
+                    logging.info(f"✅ Workflow {issue_data['workflow']} ya está PASANDO. Archivando correo...")
+                    archive_message(service, message['id'])
+                else:
+                    # AQUÍ IRÍA LA LÓGICA DE REPARACIÓN
+                    # 1. Verificar logs con `gh run view ...`
+                    # 2. Intentar rerun o crear issue
+                    logging.info(f"⚠️ Acción requerida para {issue_data['repo']}")
+                    
+                    # TODO: Implementar llamada a GH CLI
+                    # subprocess.run(["gh", "run", "rerun", ...])
+                    
+                    # Por ahora, marcar como leído para no procesarlo múltiples veces
+                    mark_as_read(service, message['id'])
             else:
                 logging.info("No se pudo extraer información estructurada del correo.")
+                mark_as_read(service, message['id'])
 
     except HttpError as error:
         logging.error(f'Ocurrió un error al procesar mensajes: {error}')
@@ -162,9 +170,40 @@ def mark_as_read(service, msg_id):
         service.users().messages().modify(userId='me', id=msg_id, body={
             'removeLabelIds': ['UNREAD']
         }).execute()
-        logging.info(f"Mensaje {msg_id} marcado como leído.")
+        logging.info(f"✅ Mensaje {msg_id} marcado como leído.")
     except HttpError as error:
         logging.error(f'Error al marcar mensaje como leído: {error}')
+
+def archive_message(service, msg_id):
+    """Archiva un correo (remueve de INBOX)."""
+    try:
+        service.users().messages().modify(userId='me', id=msg_id, body={
+            'removeLabelIds': ['INBOX']
+        }).execute()
+        logging.info(f"📦 Mensaje {msg_id} archivado.")
+    except HttpError as error:
+        logging.error(f'Error al archivar mensaje: {error}')
+
+def check_workflow_status(repo, workflow_name):
+    """Verifica si el workflow más reciente de un repo está pasando."""
+    try:
+        # Ejecutar gh CLI para verificar el último run
+        result = subprocess.run(
+            ['gh', 'run', 'list', '--repo', repo, '--workflow', workflow_name, 
+             '--limit', '1', '--json', 'conclusion'],
+            capture_output=True,
+            text=True
+        )
+        
+        if result.returncode == 0:
+            import json
+            runs = json.loads(result.stdout)
+            if runs and len(runs) > 0:
+                return runs[0].get('conclusion') == 'success'
+        return False
+    except Exception as e:
+        logging.error(f"Error verificando workflow status: {e}")
+        return False
 
 if __name__ == '__main__':
     logging.info("Iniciando Email Handler Agent...")
