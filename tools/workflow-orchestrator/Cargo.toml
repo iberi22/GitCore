@@ -49,6 +49,9 @@ tokio-process = "0.2"
 # Parallel iterators (for CPU-bound tasks)
 rayon = "1.10"
 
+# Random number generation
+rand = "0.8"
+
 # Rate limiting
 governor = "0.7"
 

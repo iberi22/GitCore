@@ -3179,6 +3179,7 @@ dependencies = [
  "mockito",
  "octocrab",
  "pulldown-cmark",
+ "rand 0.8.5",
  "rayon",
  "regex",
  "reqwest",

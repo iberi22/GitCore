@@ -15,6 +15,7 @@ mod validator;
 mod reporter;
 mod parallel;
 mod guardian_core;
+mod dispatcher_core;
 
 #[derive(Parser, Debug)]
 #[command(
