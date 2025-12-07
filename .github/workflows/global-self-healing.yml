@@ -39,14 +39,15 @@ jobs:
         run: |
           echo "Checking ${{ matrix.repo }} for failures..."
           
+          # Check the last 10 runs to find any recent failures
           RUN_ID=$(gh run list \
             --repo ${{ matrix.repo }} \
-            --limit 1 \
+            --limit 10 \
             --json databaseId,conclusion \
-            --jq '.[] | select(.conclusion == "failure") | .databaseId' 2>/dev/null || echo "")
+            --jq 'map(select(.conclusion == "failure")) | .[0].databaseId' 2>/dev/null || echo "")
           
-          if [ -z "$RUN_ID" ]; then
-            echo "No failures found"
+          if [ -z "$RUN_ID" ] || [ "$RUN_ID" = "null" ]; then
+            echo "No failures found in last 10 runs"
             echo "has_failure=false" >> $GITHUB_OUTPUT
           else
             echo "Found failure: Run ID $RUN_ID"
