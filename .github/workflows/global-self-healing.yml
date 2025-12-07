@@ -1,23 +1,17 @@
-name: 🌐 Global Self-Healing Monitor
+name: Global Self-Healing Monitor
 
 on:
   schedule:
-    # Ejecutar cada 30 minutos
     - cron: '*/30 * * * *'
   workflow_dispatch:
-    inputs:
-      target_repos:
-        description: 'Target repos (comma-separated, empty = all)'
-        required: false
-        type: string
 
 permissions:
   contents: read
 
 jobs:
-  monitor-all-repos:
+  monitor-repos:
     runs-on: ubuntu-latest
-
+    
     strategy:
       matrix:
         repo:
@@ -34,149 +28,59 @@ jobs:
           - iberi22/pocket_cerebro
       fail-fast: false
       max-parallel: 3
-
+    
     steps:
-      - name: 🔍 Check Recent Failures
+      - name: Check Failures
         id: check
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           echo "Checking ${{ matrix.repo }} for failures..."
           
-          # Obtener últimos 10 workflows runs con manejo de errores
-          FAILURES=$(gh run list \
-            --repo ${{ matrix.repo }} \
-            --limit 10 \
-            --json conclusion \
-            --jq '[.[] | select(.conclusion == "failure")] | length' 2>/dev/null || echo "0")
-          
-          echo "failures=$FAILURES" >> $GITHUB_OUTPUT
-          
-          # Comparación numérica segura
-          if [ ! -z "$FAILURES" ] && [ "$FAILURES" != "0" ]; then
-            echo "⚠️ Found $FAILURES failed runs"
-            echo "has_failures=true" >> $GITHUB_OUTPUT
-          else
-            echo "✅ No failures found"
-            echo "has_failures=false" >> $GITHUB_OUTPUT
-          fi
-      
-      - name: 🔬 Analyze Failure Type
-        if: steps.check.outputs.has_failures == 'true'
-        id: analyze
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          echo "Analyzing failure in ${{ matrix.repo }}..."
-
-          # Obtener el último workflow fallido
           RUN_ID=$(gh run list \
             --repo ${{ matrix.repo }} \
             --limit 1 \
             --json databaseId,conclusion \
-            --jq '.[] | select(.conclusion == "failure") | .databaseId')
-
+            --jq '.[] | select(.conclusion == "failure") | .databaseId' 2>/dev/null || echo "")
+          
           if [ -z "$RUN_ID" ]; then
-            echo "No run ID found"
-            exit 0
-          fi
-
-          # Intentar obtener logs
-          LOGS=$(gh run view $RUN_ID --repo ${{ matrix.repo }} --log 2>&1 || echo "")
-
-          # Clasificar error
-          if echo "$LOGS" | grep -qiE "ETIMEDOUT|ECONNRESET|429|rate limit"; then
-            echo "error_type=transient" >> $GITHUB_OUTPUT
-            echo "action=retry" >> $GITHUB_OUTPUT
-          elif echo "$LOGS" | grep -qiE "npm ERR|yarn error|pip.*failed"; then
-            echo "error_type=dependency" >> $GITHUB_OUTPUT
-            echo "action=fix_deps" >> $GITHUB_OUTPUT
-          elif echo "$LOGS" | grep -qiE "lint|prettier|eslint"; then
-            echo "error_type=lint" >> $GITHUB_OUTPUT
-            echo "action=fix_lint" >> $GITHUB_OUTPUT
-          elif echo "$LOGS" | grep -qiE "test.*failed|FAIL|AssertionError"; then
-            echo "error_type=test" >> $GITHUB_OUTPUT
-            echo "action=create_issue" >> $GITHUB_OUTPUT
+            echo "No failures found"
+            echo "has_failure=false" >> $GITHUB_OUTPUT
           else
-            echo "error_type=unknown" >> $GITHUB_OUTPUT
-            echo "action=create_issue" >> $GITHUB_OUTPUT
+            echo "Found failure: Run ID $RUN_ID"
+            echo "has_failure=true" >> $GITHUB_OUTPUT
+            echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
           fi
-
-          echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
-
-      - name: 🔄 Auto-Retry Transient Errors
-        if: steps.analyze.outputs.action == 'retry'
+      
+      - name: Create Issue
+        if: steps.check.outputs.has_failure == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          echo "🔄 Retrying failed workflow in ${{ matrix.repo }}..."
-
-          gh run rerun ${{ steps.analyze.outputs.run_id }} \
-            --repo ${{ matrix.repo }} \
-            --failed || echo "⚠️ Could not rerun workflow"
-
-      - name: 📋 Create Issue for Non-Transient Errors
-        if: steps.analyze.outputs.action == 'create_issue' && steps.check.outputs.has_failures == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          echo "📋 Creating issue in ${{ matrix.repo }}..."
-
-          WORKFLOW_NAME=$(gh run list \
-            --repo ${{ matrix.repo }} \
-            --limit 1 \
-            --json workflowName,conclusion \
-            --jq '.[] | select(.conclusion == "failure") | .workflowName')
-
-          RUN_ID="${{ steps.analyze.outputs.run_id }}"
+          RUN_ID="${{ steps.check.outputs.run_id }}"
           REPO="${{ matrix.repo }}"
-          ERROR_TYPE="${{ steps.analyze.outputs.error_type }}"
-
-          # Verificar si ya existe un issue similar
+          
+          WORKFLOW_NAME=$(gh run view $RUN_ID \
+            --repo $REPO \
+            --json name \
+            --jq '.name' 2>/dev/null || echo "Unknown Workflow")
+          
           EXISTING=$(gh issue list \
             --repo $REPO \
             --label "bug" \
             --search "in:title $WORKFLOW_NAME" \
             --state open \
             --json number \
-            --jq '.[0].number')
-
-          ISSUE_BODY="Workflow \`$WORKFLOW_NAME\` failed in \`$REPO\`.
-
-**Run:** https://github.com/$REPO/actions/runs/$RUN_ID
-**Error Type:** $ERROR_TYPE
-
-**Detected by:** Global Self-Healing Monitor
-
-### Next Steps
-- [ ] Review failure logs
-- [ ] Determine root cause
-- [ ] Apply fix
-- [ ] Verify workflow passes"
-
+            --jq '.[0].number' 2>/dev/null || echo "")
+          
           if [ -n "$EXISTING" ] && [ "$EXISTING" != "null" ]; then
-            echo "Issue already exists: #$EXISTING"
-            gh issue comment $EXISTING \
-              --repo $REPO \
-              --body "🔄 New failure detected. Run: https://github.com/$REPO/actions/runs/$RUN_ID"
+            echo "Updating issue #$EXISTING"
+            gh issue comment $EXISTING --repo $REPO --body "New failure: https://github.com/$REPO/actions/runs/$RUN_ID"
           else
+            echo "Creating new issue"
             gh issue create \
               --repo $REPO \
-              --title "🚨 CI Failure: $WORKFLOW_NAME" \
-              --body "$ISSUE_BODY" \
-              --label "bug,ai-plan"
+              --title "CI Failure: $WORKFLOW_NAME" \
+              --body "Workflow failed. Run: https://github.com/$REPO/actions/runs/$RUN_ID" \
+              --label "bug,ai-plan" || echo "Could not create issue"
           fi
-
-  summary:
-    needs: monitor-all-repos
-    runs-on: ubuntu-latest
-    if: always()
-
-    steps:
-      - name: 📊 Generate Summary
-        run: |
-          echo "## 🌐 Global Self-Healing Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Monitored 11 repositories for workflow failures." >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Check individual job logs for details." >> $GITHUB_STEP_SUMMARY
