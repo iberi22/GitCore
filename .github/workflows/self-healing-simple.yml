@@ -33,4 +33,4 @@ jobs:
             --repo "${{ github.repository }}" \
             --title "Test Self-Healing Trigger" \
             --body "Successfully detected failure in ${{ github.event.workflow_run.name }}" \
-            --label "test,self-healing"
+            --label "bug"

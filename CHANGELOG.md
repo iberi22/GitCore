@@ -5,6 +5,35 @@ All notable changes to the **Git-Core Protocol** will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0-alpha] - 2025-12-06 📊 "Session Analytics"
+
+### Added
+- **📚 Agent Docs Structure**: New organized folder structure in `docs/agent-docs/`:
+  - `specs/` - Technical specifications
+  - `prompts/` - Reusable prompts for agents
+  - `research/` - Technical investigations
+  - `sessions/` - Archived sessions with metrics
+  - `reports/` - Generated reports
+  - `analysis/` - Optimization analyses
+  - `archive/` - Obsolete documents
+
+- **📊 Session Analytics**:
+  - Enhanced `export-session.ps1` v2.0 with full metrics
+  - New `archive-sessions.ps1` for organizing old sessions
+  - New `generate-session-metrics.ps1` for monthly retrospectives
+
+- **📈 Metrics Tracking**:
+  - Session ID for traceability
+  - Duration, model, files modified, commits made
+  - Issues touched and accomplishments
+  - Monthly aggregated METRICS.json
+
+### Changed
+- **Session Export**: Now includes accomplishments, next actions, and efficiency metrics
+- **Documentation**: `docs/agent-docs/README.md` completely rewritten with archiving workflow
+
+---
+
 ## [3.1.0-alpha] - 2025-12-06 🧪 "Context Intelligence"
 
 ### Experimental
