@@ -5,6 +5,36 @@ All notable changes to the **Git-Core Protocol** will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2025-12-06
+
+### Added
+- **🚀 Protocol Propagation System**: Automatic distribution of protocol updates to all managed repos
+  - `protocol-propagation.yml` workflow triggers on version tags
+  - `release-protocol.ps1` script for creating new versions
+  - `.propagation.json` configuration for customizing target repos
+  - Creates PRs or Issues automatically in all target repositories
+  - Supports selective updates (workflows, agents, scripts, or full)
+  - Priority-based rollout for staged deployments
+
+- **🛡️ Self-Healing CI/CD Automation**: Automatic workflow failure detection and repair
+  - `self-healing.yml` workflow monitors all workflow runs
+  - Auto-classifies errors (transient/dependency/lint/test/code)
+  - Auto-retry for transient errors (timeouts, rate limits)
+  - Auto-fix for dependency issues (creates PR with lockfile updates)
+  - Auto-fix for linting issues (runs formatters, creates PR)
+  - Creates issues for code/test failures requiring manual intervention
+  - `deploy-self-healing.ps1` script for multi-repo deployment
+
+- **📧 Email Handler**: Gmail integration for workflow failure notifications
+  - OAuth2 authentication with Gmail API
+  - Detects workflow failures from email notifications
+  - Archives emails automatically when workflows are fixed
+  - Fallback polling method for environments without workflow_run support
+
+### Changed
+- Updated `.github/issues/` syncing to handle protocol update PRs
+- Improved error handling in workflow file syntax validation
+
 ## [3.2.0-alpha] - 2025-12-06 📊 "Session Analytics"
 
 ### Added
