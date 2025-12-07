@@ -3,11 +3,11 @@ name: Protocol Propagation
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - "v*.*.*"
   workflow_dispatch:
     inputs:
       update_type:
-        description: 'Update type'
+        description: "Update type"
         required: true
         type: choice
         options:
@@ -15,7 +15,7 @@ on:
           - agents
           - scripts
           - full
-        default: 'workflows'
+        default: "workflows"
 
 permissions:
   contents: read
@@ -72,7 +72,7 @@ jobs:
           # Configure git to use the token for authentication
           git config --global credential.helper store
           echo "https://x-access-token:${GH_TOKEN}@github.com" > ~/.git-credentials
-          
+
           # Clone using https with token
           git clone https://github.com/${{ matrix.repo }}.git target-repo || {
             echo "Cannot access ${{ matrix.repo }}, skipping..."
@@ -152,9 +152,16 @@ jobs:
           UPDATE_TYPE="${{ github.event.inputs.update_type || 'workflows' }}"
           REPO="${{ matrix.repo }}"
 
+          # Try to create PR without labels first, then add labels if they exist
           gh pr create \
             --title "Git-Core Protocol v${VERSION} Update" \
             --body "Updates from Git-Core Protocol v${VERSION}. Type: ${UPDATE_TYPE}. See: https://github.com/iberi22/Git-Core-Protocol/releases/tag/v${VERSION}" \
-            --label "dependencies,protocol-update" \
             --base main \
-            --head ${{ steps.package.outputs.branch }} || echo "PR already exists or error"
+            --head ${{ steps.package.outputs.branch }} || echo "PR may already exist"
+          
+          # Try to add labels (ignore if they don't exist)
+          PR_NUMBER=$(gh pr list --head ${{ steps.package.outputs.branch }} --json number --jq '.[0].number' 2>/dev/null || echo "")
+          if [ -n "$PR_NUMBER" ]; then
+            gh pr edit $PR_NUMBER --add-label "dependencies" 2>/dev/null || true
+            gh pr edit $PR_NUMBER --add-label "protocol-update" 2>/dev/null || true
+          fi
