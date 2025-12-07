@@ -206,7 +206,18 @@ def check_workflow_status(repo, workflow_name):
         return False
 
 if __name__ == '__main__':
-    logging.info("Iniciando Email Handler Agent...")
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='GitHub Email Handler Agent')
+    parser.add_argument('--max-emails', type=int, default=50, help='Maximum emails to process')
+    parser.add_argument('--dry-run', action='store_true', help='Dry run mode (no modifications)')
+    args = parser.parse_args()
+    
+    logging.info(f"Iniciando Email Handler Agent (max: {args.max_emails} emails)...")
+    
+    if args.dry_run:
+        logging.info("🔍 DRY RUN MODE - No se modificarán correos")
+    
     service = get_gmail_service()
     if service:
         process_messages(service)

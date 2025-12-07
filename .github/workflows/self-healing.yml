@@ -4,15 +4,13 @@ on:
   workflow_run:
     types:
       - completed
-    workflows:
-      - "🧪 Test Workflow for Self-Healing"
-      - "Sync Issues from Files"
-      - "Check Protocol Updates"
+    # NO especificar workflows = escuchar TODOS los workflows del repo
 
 permissions:
   actions: write      # Para re-ejecutar workflows
   issues: write       # Para crear issues
   pull-requests: write # Para crear PRs de fix
+  contents: write     # Para crear branches y commits
 
 jobs:
   analyze-failure:

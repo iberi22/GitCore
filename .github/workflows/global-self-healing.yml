@@ -1,0 +1,182 @@
+name: 🌐 Global Self-Healing Monitor
+
+on:
+  schedule:
+    # Ejecutar cada 30 minutos
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+    inputs:
+      target_repos:
+        description: 'Target repos (comma-separated, empty = all)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  monitor-all-repos:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        repo:
+          - iberi22/Git-Core-Protocol
+          - iberi22/software-factory
+          - iberi22/domus-otec
+          - iberi22/less-colegio
+          - iberi22/synapse-protocol
+          - iberi22/gara-g
+          - iberi22/AI-Chef
+          - iberi22/contratafacil
+          - iberi22/bestof-opensorce
+          - iberi22/obs-studio-agent
+          - iberi22/pocket_cerebro
+      fail-fast: false
+      max-parallel: 3
+    
+    steps:
+      - name: 🔍 Check Recent Failures
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "Checking ${{ matrix.repo }} for failures..."
+          
+          # Obtener últimos 10 workflows runs
+          FAILURES=$(gh run list \
+            --repo ${{ matrix.repo }} \
+            --limit 10 \
+            --json conclusion,workflowName,databaseId,createdAt \
+            --jq '[.[] | select(.conclusion == "failure")] | length')
+          
+          echo "failures=$FAILURES" >> $GITHUB_OUTPUT
+          
+          if [ "$FAILURES" -gt 0 ]; then
+            echo "⚠️ Found $FAILURES failed runs"
+            
+            # Obtener detalles del más reciente
+            LATEST=$(gh run list \
+              --repo ${{ matrix.repo }} \
+              --limit 1 \
+              --json conclusion,workflowName,databaseId,htmlUrl \
+              --jq '.[] | select(.conclusion == "failure")')
+            
+            echo "latest_failure=$LATEST" >> $GITHUB_OUTPUT
+          else
+            echo "✅ No failures found"
+          fi
+      
+      - name: 🔬 Analyze Failure Type
+        if: steps.check.outputs.failures > 0
+        id: analyze
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "Analyzing failure in ${{ matrix.repo }}..."
+          
+          # Obtener el último workflow fallido
+          RUN_ID=$(gh run list \
+            --repo ${{ matrix.repo }} \
+            --limit 1 \
+            --json databaseId,conclusion \
+            --jq '.[] | select(.conclusion == "failure") | .databaseId')
+          
+          if [ -z "$RUN_ID" ]; then
+            echo "No run ID found"
+            exit 0
+          fi
+          
+          # Intentar obtener logs
+          LOGS=$(gh run view $RUN_ID --repo ${{ matrix.repo }} --log 2>&1 || echo "")
+          
+          # Clasificar error
+          if echo "$LOGS" | grep -qiE "ETIMEDOUT|ECONNRESET|429|rate limit"; then
+            echo "error_type=transient" >> $GITHUB_OUTPUT
+            echo "action=retry" >> $GITHUB_OUTPUT
+          elif echo "$LOGS" | grep -qiE "npm ERR|yarn error|pip.*failed"; then
+            echo "error_type=dependency" >> $GITHUB_OUTPUT
+            echo "action=fix_deps" >> $GITHUB_OUTPUT
+          elif echo "$LOGS" | grep -qiE "lint|prettier|eslint"; then
+            echo "error_type=lint" >> $GITHUB_OUTPUT
+            echo "action=fix_lint" >> $GITHUB_OUTPUT
+          elif echo "$LOGS" | grep -qiE "test.*failed|FAIL|AssertionError"; then
+            echo "error_type=test" >> $GITHUB_OUTPUT
+            echo "action=create_issue" >> $GITHUB_OUTPUT
+          else
+            echo "error_type=unknown" >> $GITHUB_OUTPUT
+            echo "action=create_issue" >> $GITHUB_OUTPUT
+          fi
+          
+          echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
+      
+      - name: 🔄 Auto-Retry Transient Errors
+        if: steps.analyze.outputs.action == 'retry'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "🔄 Retrying failed workflow in ${{ matrix.repo }}..."
+          
+          gh run rerun ${{ steps.analyze.outputs.run_id }} \
+            --repo ${{ matrix.repo }} \
+            --failed || echo "⚠️ Could not rerun workflow"
+      
+      - name: 📋 Create Issue for Non-Transient Errors
+        if: steps.analyze.outputs.action == 'create_issue' && steps.check.outputs.failures > 0
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "📋 Creating issue in ${{ matrix.repo }}..."
+          
+          WORKFLOW_NAME=$(gh run list \
+            --repo ${{ matrix.repo }} \
+            --limit 1 \
+            --json workflowName,conclusion \
+            --jq '.[] | select(.conclusion == "failure") | .workflowName')
+          
+          # Verificar si ya existe un issue similar
+          EXISTING=$(gh issue list \
+            --repo ${{ matrix.repo }} \
+            --label "bug" \
+            --search "in:title $WORKFLOW_NAME" \
+            --state open \
+            --json number \
+            --jq '.[0].number')
+          
+          if [ -n "$EXISTING" ]; then
+            echo "Issue already exists: #$EXISTING"
+            gh issue comment $EXISTING \
+              --repo ${{ matrix.repo }} \
+              --body "🔄 New failure detected. Run: https://github.com/${{ matrix.repo }}/actions/runs/${{ steps.analyze.outputs.run_id }}"
+          else
+            gh issue create \
+              --repo ${{ matrix.repo }} \
+              --title "🚨 CI Failure: $WORKFLOW_NAME" \
+              --body "Workflow \`$WORKFLOW_NAME\` failed in \`${{ matrix.repo }}\`.
+
+**Run:** https://github.com/${{ matrix.repo }}/actions/runs/${{ steps.analyze.outputs.run_id }}
+**Error Type:** ${{ steps.analyze.outputs.error_type }}
+
+**Detected by:** Global Self-Healing Monitor
+
+### Next Steps
+- [ ] Review failure logs
+- [ ] Determine root cause
+- [ ] Apply fix
+- [ ] Verify workflow passes" \
+              --label "bug,ai-plan"
+          fi
+  
+  summary:
+    needs: monitor-all-repos
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: 📊 Generate Summary
+        run: |
+          echo "## 🌐 Global Self-Healing Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Monitored 11 repositories for workflow failures." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Check individual job logs for details." >> $GITHUB_STEP_SUMMARY
