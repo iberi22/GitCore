@@ -128,28 +128,23 @@ jobs:
             --json workflowName,conclusion \
             --jq '.[] | select(.conclusion == "failure") | .workflowName')
 
+          RUN_ID="${{ steps.analyze.outputs.run_id }}"
+          REPO="${{ matrix.repo }}"
+          ERROR_TYPE="${{ steps.analyze.outputs.error_type }}"
+
           # Verificar si ya existe un issue similar
           EXISTING=$(gh issue list \
-            --repo ${{ matrix.repo }} \
+            --repo $REPO \
             --label "bug" \
             --search "in:title $WORKFLOW_NAME" \
             --state open \
             --json number \
             --jq '.[0].number')
 
-          if [ -n "$EXISTING" ]; then
-            echo "Issue already exists: #$EXISTING"
-            gh issue comment $EXISTING \
-              --repo ${{ matrix.repo }} \
-              --body "🔄 New failure detected. Run: https://github.com/${{ matrix.repo }}/actions/runs/${{ steps.analyze.outputs.run_id }}"
-          else
-            gh issue create \
-              --repo ${{ matrix.repo }} \
-              --title "🚨 CI Failure: $WORKFLOW_NAME" \
-              --body "Workflow \`$WORKFLOW_NAME\` failed in \`${{ matrix.repo }}\`.
+          ISSUE_BODY="Workflow \`$WORKFLOW_NAME\` failed in \`$REPO\`.
 
-**Run:** https://github.com/${{ matrix.repo }}/actions/runs/${{ steps.analyze.outputs.run_id }}
-**Error Type:** ${{ steps.analyze.outputs.error_type }}
+**Run:** https://github.com/$REPO/actions/runs/$RUN_ID
+**Error Type:** $ERROR_TYPE
 
 **Detected by:** Global Self-Healing Monitor
 
@@ -157,7 +152,18 @@ jobs:
 - [ ] Review failure logs
 - [ ] Determine root cause
 - [ ] Apply fix
-- [ ] Verify workflow passes" \
+- [ ] Verify workflow passes"
+
+          if [ -n "$EXISTING" ] && [ "$EXISTING" != "null" ]; then
+            echo "Issue already exists: #$EXISTING"
+            gh issue comment $EXISTING \
+              --repo $REPO \
+              --body "🔄 New failure detected. Run: https://github.com/$REPO/actions/runs/$RUN_ID"
+          else
+            gh issue create \
+              --repo $REPO \
+              --title "🚨 CI Failure: $WORKFLOW_NAME" \
+              --body "$ISSUE_BODY" \
               --label "bug,ai-plan"
           fi
 
