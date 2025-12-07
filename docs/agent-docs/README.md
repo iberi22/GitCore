@@ -2,6 +2,36 @@
 
 > **"Todo documento generado por IA debe ser trazable y analizable"**
 
+## 📚 Navegación Rápida
+
+### Por Tipo de Documento
+
+- **📐 Especificaciones** - [specs/README.md](./specs/README.md)
+  - `SPEC_CONTEXT_PROTOCOL.md` - Protocolo de contexto stateless
+  - `SPEC_EVOLUTION_PROTOCOL.md` - Sistema de evolución del protocolo
+  - `SPEC_HUMAN_LAYER_PROTOCOL.md` - Human-in-the-loop para operaciones críticas
+  - `SPEC_MICRO_AGENTS.md` - Sistema de personas por rol
+  - `SPEC_NON_BLOCKING_EXECUTION.md` - Ejecución no bloqueante
+
+- **📊 Análisis** - [analysis/README.md](./analysis/README.md)
+  - `ANALYSIS_TELEMETRY_SCALE.md` - Escalabilidad de telemetría
+  - `ANALYSIS_WORKFLOW_RUST_MIGRATION.md` - Migración a Rust
+
+- **📈 Reportes** - [reports/README.md](./reports/README.md)
+  - `REPORT_GLOBAL_SELFHEALING_DIAGNOSIS.md` - Diagnóstico de auto-sanación
+  - `REPORT_PROJECT_AUDIT.md` - Auditoría de proyecto
+  - `REPORT_WORKFLOW_OPTIMIZATION.md` - Optimización de workflows
+
+- **🔬 Investigación** - [research/README.md](./research/README.md)
+  - `RESEARCH_LLM_TOOL_CALLING.md` - Tool calling en LLMs
+  - `RESEARCH_SELFHEALING_CICD.md` - CI/CD auto-sanador
+  - `RESEARCH_STACK_CONTEXT.md` - Contexto de stack tecnológico
+
+- **💡 Prompts** - [prompts/README.md](./prompts/README.md)
+  - `PROMPT_PROTOCOL_INSTALLER.md` - Instalación de protocolo
+
+---
+
 ## 🗂️ Estructura de Carpetas
 
 ```
