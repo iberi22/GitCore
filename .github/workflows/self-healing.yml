@@ -127,31 +127,9 @@ Run: ${{ steps.info.outputs.run_url }}"
             git push origin "$branch_name"
             
             # Crear PR
-            ERROR_LOG=$(tail -n 30 failure_snippet.log | sed 's/"/\\"/g')
             gh pr create \
               --title "🤖 Auto-Fix: Dependency Issues" \
-              --body "**Auto-generated fix for dependency errors**
-
-**Failed Workflow:** [${{ steps.info.outputs.workflow_name }}](${{ steps.info.outputs.run_url }})
-**Commit:** ${{ steps.info.outputs.commit_sha }}
-
-### Changes
-- Updated dependency lockfiles
-- Resolved version conflicts
-
-### Error Log Snippet
-<details>
-<summary>View Error Log</summary>
-
-${ERROR_LOG}
-
-</details>
-
-**Auto-Actions:**
-- [x] Analyzed error type
-- [x] Applied automatic fix
-- [ ] Tests need to pass
-" \
+              --body "Auto-generated fix for dependency errors. Failed workflow: ${{ steps.info.outputs.workflow_name }} at ${{ steps.info.outputs.run_url }}" \
               --label "dependencies,auto-fix,ai-agent" \
               --base main
           fi
@@ -206,40 +184,13 @@ Triggered by failed workflow: ${{ steps.info.outputs.workflow_name }}"
             echo "📌 Issue existente encontrado: #$existing_issue"
             
             # Agregar comentario al issue existente
-            gh issue comment "$existing_issue" --body "🔄 **Nuevo fallo detectado**
-
-**Run:** ${{ steps.info.outputs.run_url }}
-**Commit:** \`${{ steps.info.outputs.commit_sha }}\`
-**Branch:** \`${{ steps.info.outputs.branch }}\`
-
-### Error Log (últimas 30 líneas)
-\`\`\`
-$(tail -n 30 failure_snippet.log)
-\`\`\`
-"
+            gh issue comment "$existing_issue" --body "New failure detected in ${{ steps.info.outputs.workflow_name }}. Run: ${{ steps.info.outputs.run_url }}"
           else
             echo "🆕 Creando nuevo issue..."
             
             gh issue create \
               --title "🚨 CI Failure: ${{ steps.info.outputs.workflow_name }}" \
-              --body "**Workflow:** \`${{ steps.info.outputs.workflow_name }}\`  
-**Run:** ${{ steps.info.outputs.run_url }}  
-**Commit:** \`${{ steps.info.outputs.commit_sha }}\`  
-**Branch:** \`${{ steps.info.outputs.branch }}\`  
-**Error Type:** ${{ steps.classify.outputs.error_type }}
-
-### Error Log (últimas 50 líneas)
-\`\`\`
-$(tail -n 50 failure_snippet.log)
-\`\`\`
-
----
-
-### 🤖 Auto-Actions Checklist
-- [x] Error classified
-- [ ] Analyzed by AI agent
-- [ ] Fix PR created
-- [ ] Tests passed
+              --body "Workflow ${{ steps.info.outputs.workflow_name }} failed. Run: ${{ steps.info.outputs.run_url }}. Commit: ${{ steps.info.outputs.commit_sha }}. Error type: ${{ steps.classify.outputs.error_type }}"
 
 **Labels:** \`auto-generated\`, \`ci-failure\`, \`${{ steps.classify.outputs.error_type }}\`
 " \
