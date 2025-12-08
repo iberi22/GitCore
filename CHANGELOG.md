@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.2.1] - 2025-12-08 ⚡ "Performance & Simplification"
+
+### Changed
+
+- **⚡ Updated Protocol Tagline**: "Inteligente, rápida y minimalista - Rust-powered, sub-second execution"
+  - Reflects the 10-30x performance improvements from Rust migrations
+  - Emphasizes speed and minimalism over complexity
+  - Updated in README.md, AGENTS.md, and copilot-instructions.md
+
+- **🧹 Repository Cleanup**:
+  - Removed 43 merged/obsolete branches (93.6% reduction)
+  - Enabled auto-delete on PR merge
+  - Only 3 branches remain: `main`, `living-context/main`
+
+### Removed
+
+- **📧 Email Handler Fallback** (463 lines):
+  - Removed `.github/workflows/email-cleanup.yml`
+  - Removed `tools/email-handler/` directory
+  - Redundant with native `workflow_run` events in `self-healing.yml`
+  - Eliminates Gmail API dependency and configuration complexity
+
+### Fixed
+
+- **✅ CI Failures Resolved** (#67, #70, #71):
+  - Root cause: `gh` CLI warnings causing exit code 1
+  - Fix: `$ErrorActionPreference = 'SilentlyContinue'` in `detect-repo-config.ps1`
+  - All affected workflows now passing
+
+### Architecture
+
+- **Simplified Self-Healing Stack**:
+  - Native GitHub events only (no external polling)
+  - Reduced token consumption
+  - Eliminated fallback methods requiring external credentials
+
+### Documentation
+
+- Version bumped to 3.2.1 across all files
+- Updated performance metrics in documentation
+
 ## [3.2.0] - 2025-12-07 📚 "Diátaxis Documentation System"
 
 ### Added

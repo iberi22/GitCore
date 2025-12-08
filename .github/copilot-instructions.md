@@ -1,6 +1,6 @@
 # 🧠 GitHub Copilot Instructions
 
-> **"Inteligente, sofisticada pero minimalista en complejidad"**
+> **"⚡ Inteligente, rápida y minimalista - Rust-powered, sub-second execution"**
 
 ## Prime Directive
 You are operating under the **Git-Core Protocol**. Your state is GitHub Issues, not internal memory.
