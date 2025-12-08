@@ -46,7 +46,7 @@
 //!         "ai-agent".to_string(),
 //!         false,
 //!     ).await?;
-//!     
+//!
 //!     println!("Assigned {} issues", assignments.len());
 //!     Ok(())
 //! }

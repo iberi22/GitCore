@@ -2,7 +2,7 @@
 # Part of Git-Core Protocol v3.1 "Hybrid Intelligence"
 #
 # This workflow evaluates PRs for auto-merge eligibility using a confidence-based scoring system.
-# 
+#
 # **Performance:**
 # - Rust implementation: <200ns per evaluation (~10M ops/sec)
 # - PowerShell fallback: 2-3 seconds
@@ -82,7 +82,7 @@ jobs:
           if command -v cargo &> /dev/null && [ -f "tools/workflow-orchestrator/Cargo.toml" ]; then
             echo "✅ Running Guardian Agent (Rust - High Performance)"
             cd tools/workflow-orchestrator
-            
+
             # Run Guardian with CI mode for JSON output
             cargo run --release -- guardian \
               --pr-number ${{ steps.pr.outputs.number }} \

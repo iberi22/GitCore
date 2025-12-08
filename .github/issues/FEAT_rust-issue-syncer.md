@@ -26,6 +26,7 @@ Crear nueva tool en Rust `tools/issue-syncer` para reemplazar `scripts/sync-issu
 **Workflow afectado:** `.github/workflows/sync-issues.yml`
 
 **Script actual:** `scripts/sync-issues.ps1`
+
 - Sync bidireccional: `.github/issues/*.md` ↔ GitHub Issues
 - YAML frontmatter parsing
 - JSON mapping (.issue-mapping.json)
@@ -33,6 +34,7 @@ Crear nueva tool en Rust `tools/issue-syncer` para reemplazar `scripts/sync-issu
 - Auto-cleanup de issues cerrados
 
 **Cuellos de botella:**
+
 - PowerShell file I/O lento
 - YAML parsing manual
 - Múltiples llamadas `gh` secuenciales
@@ -46,6 +48,7 @@ Crear nueva tool en Rust `tools/issue-syncer` para reemplazar `scripts/sync-issu
 **Ubicación:** `tools/issue-syncer/`
 
 **Arquitectura:**
+
 ```
 tools/issue-syncer/
 ├── src/
@@ -60,6 +63,7 @@ tools/issue-syncer/
 ```
 
 **Funciones principales:**
+
 ```rust
 pub struct IssueSyncer {
     github_client: Octocrab,
@@ -73,14 +77,14 @@ impl IssueSyncer {
         self.pull().await?;
         Ok(self.generate_report())
     }
-    
+
     pub async fn push(&self) -> Result<Vec<Created>> {
         // .md files -> GitHub Issues
         let files = self.scan_issue_files()?;
-        
+
         for file in files {
             let issue_data = self.parse_frontmatter(&file)?;
-            
+
             if let Some(issue_number) = self.mapping.get(&file) {
                 self.update_issue(issue_number, issue_data).await?;
             } else {
@@ -88,31 +92,31 @@ impl IssueSyncer {
                 self.mapping.add(&file, number)?;
             }
         }
-        
+
         Ok(created)
     }
-    
+
     pub async fn pull(&mut self) -> Result<Vec<Deleted>> {
         // GitHub Issues -> Delete closed .md files
         let closed = self.fetch_closed_issues().await?;
-        
+
         for issue in closed {
             if let Some(file) = self.mapping.get_file(issue.number) {
                 fs::remove_file(&file)?;
                 self.mapping.remove(issue.number)?;
             }
         }
-        
+
         Ok(deleted)
     }
-    
+
     pub async fn watch(&self) -> Result<()> {
         // File system watcher con debouncing
         let (tx, rx) = channel();
         let mut watcher = notify::recommended_watcher(tx)?;
-        
+
         watcher.watch(&self.issues_dir, RecursiveMode::NonRecursive)?;
-        
+
         loop {
             match rx.recv() {
                 Ok(Ok(Event { kind: EventKind::Modify(_), paths, .. })) => {
@@ -150,6 +154,7 @@ issue-syncer sync --repo owner/repo
 ### Fase 3: Workflow Update
 
 **Cambio en `.github/workflows/sync-issues.yml`:**
+
 ```yaml
 - name: 📋 Sync Issues
   run: |
@@ -164,6 +169,7 @@ issue-syncer sync --repo owner/repo
 ### Fase 4: Local Development
 
 **Script wrapper para compatibilidad:**
+
 ```bash
 # scripts/sync-issues.sh (nuevo)
 #!/bin/bash
@@ -208,6 +214,7 @@ tracing-subscriber = "0.3"
 ## 📝 Tareas
 
 ### ✅ Core Implementation (PHASE 1 - COMPLETE)
+
 - [x] Setup proyecto `tools/issue-syncer/`
 - [x] Implementar `parser.rs` para YAML frontmatter
 - [x] Implementar `mapping.rs` para JSON persistence
@@ -216,6 +223,7 @@ tracing-subscriber = "0.3"
 - [x] ~~Implementar `watcher.rs` file system monitoring~~ (deferred - not critical)
 
 ### ✅ CLI (PHASE 1 - COMPLETE)
+
 - [x] Setup clap CLI con subcommands
 - [x] Command `sync` (push + pull)
 - [x] Command `push` (files -> GitHub)
@@ -225,6 +233,7 @@ tracing-subscriber = "0.3"
 - [x] ~~Flag `--repo`~~ (deferred - uses env vars)
 
 ### ✅ Testing & Integration (PHASE 2 - COMPLETE)
+
 - [x] Unit tests para cada módulo (12 unit tests)
 - [x] Integration tests con mock API (9 integration tests)
 - [x] Benchmarks comparativos (11 benchmarks: 352K-794K speedup)
@@ -232,6 +241,7 @@ tracing-subscriber = "0.3"
 - [x] ~~Cross-platform testing (Linux, macOS, Windows)~~ (Linux-only for now)
 
 ### ✅ Distribution (PHASE 3 - COMPLETE)
+
 - [x] ~~Build script para releases~~ (manual for now)
 - [x] ~~Instalador cross-platform~~ (bin/ deployment)
 - [x] ~~Actualizar install.sh/install.ps1~~ (not needed - binary deployment)
@@ -250,6 +260,7 @@ tracing-subscriber = "0.3"
 ## ✅ IMPLEMENTATION COMPLETE
 
 **Final Metrics:**
+
 - **Total Lines:** 841 (across 5 modules)
 - **Tests:** 34 total (12 unit + 12 lib + 9 integration + 1 doctest)
 - **Benchmarks:** 11 performance tests
@@ -259,6 +270,7 @@ tracing-subscriber = "0.3"
   - Full sync: <500ms vs 5-10s (10-20x overall)
 
 **Modules:**
+
 1. `parser.rs` - 146 lines, YAML frontmatter extraction
 2. `mapping.rs` - 157 lines, bidirectional file↔issue mapping
 3. `github.rs` - 133 lines, Octocrab GitHub API wrapper
@@ -266,6 +278,7 @@ tracing-subscriber = "0.3"
 5. `main.rs` - 155 lines, clap CLI with 4 commands
 
 **Documentation:**
+
 - Comprehensive README.md with usage examples
 - Workflow updated with Rust/PowerShell hybrid fallback
 - Performance benchmarks documented
@@ -275,18 +288,22 @@ tracing-subscriber = "0.3"
 ## 🎯 Roadmap
 
 **Sprint 1 (Semana 1-2):**
+
 - Setup proyecto y core implementation
 - Parser + Syncer + GitHub wrapper
 
 **Sprint 2 (Semana 3):**
+
 - CLI commands + Watcher
 - Testing local
 
 **Sprint 3 (Semana 4):**
+
 - Integration tests + Workflow update
 - Cross-platform testing
 
 **Sprint 4 (Semana 5):**
+
 - Production cutover
 - Monitoreo
 

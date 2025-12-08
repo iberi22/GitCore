@@ -177,7 +177,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Sync Issues
         run: |
           if command -v issue-syncer &> /dev/null; then
@@ -201,6 +201,7 @@ The syncer maintains a JSON mapping file at `.github/issues/.issue-mapping.json`
 ```
 
 This file:
+
 - Maps local filenames to GitHub Issue numbers
 - Enables bidirectional lookup
 - Persists across syncs
@@ -292,6 +293,7 @@ issue-syncer sync  # Recreates mapping
 ### "Failed to create GitHub issue"
 
 Check your token permissions:
+
 - Requires `repo` scope for private repos
 - Requires `public_repo` scope for public repos
 

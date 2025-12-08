@@ -1,0 +1,172 @@
+warning: unused import: `PathBuf`
+  --> src\mapping.rs:16:23
+   |
+16 | use std::path::{Path, PathBuf};
+   |                       ^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `Path`
+ --> src\syncer.rs:6:17
+  |
+6 | use std::path::{Path, PathBuf};
+  |                 ^^^^
+
+warning: unused import: `IssueData`
+  --> src\syncer.rs:12:39
+   |
+12 | use crate::parser::{parse_issue_file, IssueData};
+   |                                       ^^^^^^^^^
+
+warning: `issue-syncer` (lib) generated 3 warnings (run `cargo fix --lib -p issue-syncer` to apply 3 suggestions)
+warning: methods `fetch_open_issues`, `is_issue_open`, and `get_issue` are never used
+   --> src\github.rs:91:18
+    |
+17  | impl GitHubClient {
+    | ----------------- methods in this implementation
+...
+91  |     pub async fn fetch_open_issues(&self) -> Result<Vec<Issue>> {
+    |                  ^^^^^^^^^^^^^^^^^
+...
+106 |     pub async fn is_issue_open(&self, number: u64) -> Result<bool> {
+    |                  ^^^^^^^^^^^^^
+...
+118 |     pub async fn get_issue(&self, number: u64) -> Result<Issue> {
+    |                  ^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: methods `remove_by_file`, `contains_file`, `contains_issue`, `is_empty`, and `clear` are never used
+   --> src\mapping.rs:67:12
+    |
+25  | impl IssueMapping {
+    | ----------------- methods in this implementation
+...
+67  |     pub fn remove_by_file(&mut self, file: &str) -> Option<u64> {
+    |            ^^^^^^^^^^^^^^
+...
+79  |     pub fn contains_file(&self, file: &str) -> bool {
+    |            ^^^^^^^^^^^^^
+...
+84  |     pub fn contains_issue(&self, issue_number: u64) -> bool {
+    |            ^^^^^^^^^^^^^^
+...
+104 |     pub fn is_empty(&self) -> bool {
+    |            ^^^^^^^^
+...
+109 |     pub fn clear(&mut self) {
+    |            ^^^^^
+
+warning: `issue-syncer` (lib) generated 3 warnings (3 duplicates)
+warning: `issue-syncer` (bin "issue-syncer") generated 5 warnings (3 duplicates)
+warning: unused variable: `syncer`
+   --> benches\syncer_benchmarks.rs:151:9
+    |
+151 |     let syncer = create_test_syncer(&temp_dir);
+    |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_syncer`
+    |
+    = note: `#[warn(unused_variables)]` on by default
+
+warning: `issue-syncer` (bench "syncer_benchmarks") generated 1 warning
+    Finished `bench` profile [optimized] target(s) in 0.59s
+     Running benches\syncer_benchmarks.rs (target\release\deps\syncer_benchmarks-5ed20186b1728b97.exe)
+Gnuplot not found, using plotters backend
+Benchmarking frontmatter_parsing/simple_issue
+Benchmarking frontmatter_parsing/simple_issue: Warming up for 3.0000 s
+Benchmarking frontmatter_parsing/simple_issue: Collecting 100 samples in estimated 5.0091 s (899k iterations)
+Benchmarking frontmatter_parsing/simple_issue: Analyzing
+frontmatter_parsing/simple_issue
+                        time:   [6.0731 ┬Ás 6.3073 ┬Ás 6.5500 ┬Ás]
+                        change: [+50.183% +55.229% +60.210%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 3 outliers among 100 measurements (3.00%)
+  3 (3.00%) high mild
+Benchmarking frontmatter_parsing/complex_issue
+Benchmarking frontmatter_parsing/complex_issue: Warming up for 3.0000 s
+Benchmarking frontmatter_parsing/complex_issue: Collecting 100 samples in estimated 5.0327 s (343k iterations)
+Benchmarking frontmatter_parsing/complex_issue: Analyzing
+frontmatter_parsing/complex_issue
+                        time:   [13.738 ┬Ás 14.184 ┬Ás 14.664 ┬Ás]
+                        change: [+17.658% +22.497% +27.470%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 7 outliers among 100 measurements (7.00%)
+  4 (4.00%) low mild
+  1 (1.00%) high mild
+  2 (2.00%) high severe
+
+Benchmarking mapping_operations/add_mapping
+Benchmarking mapping_operations/add_mapping: Warming up for 3.0000 s
+Benchmarking mapping_operations/add_mapping: Collecting 100 samples in estimated 5.0006 s (36M iterations)
+Benchmarking mapping_operations/add_mapping: Analyzing
+mapping_operations/add_mapping
+                        time:   [154.18 ns 157.15 ns 160.25 ns]
+                        change: [+22.531% +24.959% +27.544%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 2 outliers among 100 measurements (2.00%)
+  2 (2.00%) high mild
+Benchmarking mapping_operations/lookup_by_file
+Benchmarking mapping_operations/lookup_by_file: Warming up for 3.0000 s
+Benchmarking mapping_operations/lookup_by_file: Collecting 100 samples in estimated 5.0000 s (179M iterations)
+Benchmarking mapping_operations/lookup_by_file: Analyzing
+mapping_operations/lookup_by_file
+                        time:   [24.416 ns 25.037 ns 25.776 ns]
+                        change: [+1.3439% +3.7273% +6.3850%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 15 outliers among 100 measurements (15.00%)
+  2 (2.00%) high mild
+  13 (13.00%) high severe
+Benchmarking mapping_operations/lookup_by_issue
+Benchmarking mapping_operations/lookup_by_issue: Warming up for 3.0000 s
+Benchmarking mapping_operations/lookup_by_issue: Collecting 100 samples in estimated 5.0000 s (123M iterations)
+Benchmarking mapping_operations/lookup_by_issue: Analyzing
+mapping_operations/lookup_by_issue
+                        time:   [38.352 ns 38.445 ns 38.541 ns]
+                        change: [-2.8295% -0.6387% +1.7093%] (p = 0.58 > 0.05)
+                        No change in performance detected.
+Found 7 outliers among 100 measurements (7.00%)
+  3 (3.00%) low mild
+  3 (3.00%) high mild
+  1 (1.00%) high severe
+Benchmarking mapping_operations/save_mapping
+Benchmarking mapping_operations/save_mapping: Warming up for 3.0000 s
+Benchmarking mapping_operations/save_mapping: Collecting 100 samples in estimated 6.8441 s (15k iterations)
+Benchmarking mapping_operations/save_mapping: Analyzing
+mapping_operations/save_mapping
+                        time:   [445.17 ┬Ás 465.54 ┬Ás 486.14 ┬Ás]
+                        change: [-28.708% -15.966% -1.7314%] (p = 0.04 < 0.05)
+                        Performance has improved.
+Found 8 outliers among 100 measurements (8.00%)
+  4 (4.00%) high mild
+  4 (4.00%) high severe
+Benchmarking mapping_operations/load_mapping
+Benchmarking mapping_operations/load_mapping: Warming up for 3.0000 s
+Benchmarking mapping_operations/load_mapping: Collecting 100 samples in estimated 5.0136 s (81k iterations)
+Benchmarking mapping_operations/load_mapping: Analyzing
+mapping_operations/load_mapping
+                        time:   [68.980 ┬Ás 70.371 ┬Ás 72.055 ┬Ás]
+                        change: [-37.122% -22.977% -5.9181%] (p = 0.01 < 0.05)
+                        Performance has improved.
+Found 9 outliers among 100 measurements (9.00%)
+  3 (3.00%) high mild
+  6 (6.00%) high severe
+
+Benchmarking file_scanning/scan_10_files
+Benchmarking file_scanning/scan_10_files: Warming up for 3.0000 s
+Benchmarking file_scanning/scan_10_files: Collecting 100 samples in estimated 5.2379 s (1200 iterations)
+Benchmarking file_scanning/scan_10_files: Analyzing
+file_scanning/scan_10_files
+                        time:   [4.1624 ms 4.1765 ms 4.1912 ms]
+                        change: [-26.774% -25.458% -24.203%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 4 outliers among 100 measurements (4.00%)
+  3 (3.00%) high mild
+  1 (1.00%) high severe
+
+Benchmarking dry_run_sync/push_5_files_dry_run
+Benchmarking dry_run_sync/push_5_files_dry_run: Warming up for 3.0000 s
+
+thread 'main' panicked at C:\Users\belal\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.48.0\src\runtime\scheduler\multi_thread\mod.rs:86:9:
+Cannot start a runtime from within a runtime. This happens because a function (like `block_on`) attempted to block the current thread while the thread is being used to drive asynchronous tasks.
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+error: bench failed, to rerun pass `--bench syncer_benchmarks`

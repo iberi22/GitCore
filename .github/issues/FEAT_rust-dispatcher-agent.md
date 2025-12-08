@@ -26,12 +26,14 @@ Migrar `scripts/dispatcher-core.ps1` (176 líneas) a Rust como módulo de `workf
 **Workflow afectado:** `.github/workflows/agent-dispatcher.yml`
 
 **Script actual:** `scripts/dispatcher-core.ps1`
+
 - Fetch issues con label específico
 - Análisis de semantic risk
 - Estrategias de distribución (round-robin, random, copilot-only, jules-only)
 - Asignación de labels a issues
 
 **Cuellos de botella:**
+
 - Múltiples llamadas `gh issue list`
 - JSON parsing en PowerShell
 - Filtrado manual de issues ya asignados
@@ -44,6 +46,7 @@ Migrar `scripts/dispatcher-core.ps1` (176 líneas) a Rust como módulo de `workf
 **Ubicación:** `tools/workflow-orchestrator/src/dispatcher_core.rs`
 
 **Funciones principales:**
+
 ```rust
 pub struct DispatcherCore {
     github_client: Octocrab,
@@ -69,19 +72,19 @@ impl DispatcherCore {
     ) -> Result<Vec<Assignment>> {
         let issues = self.fetch_unassigned_issues(&label_filter).await?;
         let candidates = self.filter_candidates(issues, max_issues);
-        
+
         let assignments = candidates
             .into_iter()
             .map(|issue| self.analyze_and_assign(issue, &strategy))
             .collect::<Result<Vec<_>>>()?;
-        
+
         if !dry_run {
             self.execute_assignments(&assignments).await?;
         }
-        
+
         Ok(assignments)
     }
-    
+
     async fn fetch_unassigned_issues(&self, label: &str) -> Result<Vec<Issue>>;
     fn analyze_risk(&self, issue: &Issue) -> u8;
     fn select_agent(&self, strategy: &Strategy, issue: &Issue) -> Agent;
@@ -92,6 +95,7 @@ impl DispatcherCore {
 ### Fase 2: CLI Integration
 
 **Command:**
+
 ```bash
 workflow-orchestrator dispatch \
   --strategy round-robin \
@@ -103,6 +107,7 @@ workflow-orchestrator dispatch \
 ### Fase 3: Workflow Update
 
 **Cambio en `.github/workflows/agent-dispatcher.yml`:**
+
 ```yaml
 - name: 🤖 Run Dispatcher Core
   run: |
@@ -160,6 +165,7 @@ rand = "0.8"                # Random strategy
 **Estado:** ✅ COMPLETADO
 
 **Resultados:**
+
 - Core implementation: 403 líneas
 - Tests: 12 integration + 3 unit = 15 total
 - Performance: 100M speedup vs PowerShell baseline
@@ -177,14 +183,17 @@ rand = "0.8"                # Random strategy
 ## 🎯 Roadmap
 
 **Sprint 1 (Semana 1-2):**
+
 - Implementación después de Guardian Agent
 - Reutilizar infraestructura de GitHub API
 
 **Sprint 2 (Semana 3):**
+
 - Integration tests y workflow update
 - A/B testing
 
 **Sprint 3 (Semana 4):**
+
 - Production cutover
 
 ---

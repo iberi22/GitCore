@@ -25,12 +25,14 @@ Migrar `scripts/guardian-core.ps1` (202 líneas) a Rust como módulo de `workflo
 **Workflow afectado:** `.github/workflows/guardian-agent.yml`
 
 **Script actual:** `scripts/guardian-core.ps1`
+
 - Parsing JSON de PR data (labels, reviews, checks)
 - Cálculo de confidence score
 - Risk analysis con regex patterns
 - Decisión de auto-merge vs escalate
 
 **Cuellos de botella:**
+
 - PowerShell startup overhead
 - JSON parsing lento
 - Múltiples llamadas `gh` CLI
@@ -43,6 +45,7 @@ Migrar `scripts/guardian-core.ps1` (202 líneas) a Rust como módulo de `workflo
 **Ubicación:** `tools/workflow-orchestrator/src/guardian_core.rs`
 
 **Funciones principales:**
+
 ```rust
 pub struct GuardianCore {
     github_client: Octocrab,
@@ -57,10 +60,10 @@ impl GuardianCore {
         let ci_status = self.check_ci_status(&pr_data.checks).await?;
         let risk = self.calculate_risk(&pr_data.files);
         let confidence = self.calculate_confidence(&pr_data);
-        
+
         Ok(Decision::from_confidence(confidence))
     }
-    
+
     async fn fetch_pr_data(&self, pr_number: u64) -> Result<PrData>;
     fn check_blockers(&self, labels: &[String]) -> bool;
     async fn check_ci_status(&self, checks: &[Check]) -> Result<bool>;
@@ -72,6 +75,7 @@ impl GuardianCore {
 ### Fase 2: CLI Integration
 
 **Command:**
+
 ```bash
 workflow-orchestrator guardian \
   --pr-number <NUMBER> \
@@ -83,6 +87,7 @@ workflow-orchestrator guardian \
 ### Fase 3: Workflow Update
 
 **Cambio en `.github/workflows/guardian-agent.yml`:**
+
 ```yaml
 - name: 🛡️ Run Guardian Core
   run: |
@@ -145,15 +150,18 @@ regex = "1"
 ## 🎯 Roadmap
 
 **Sprint 1 (Semana 1):**
+
 - Implementación core del módulo
 - Tests básicos
 
 **Sprint 2 (Semana 2):**
+
 - Integration tests
 - Workflow update con fallback
 - A/B testing
 
 **Sprint 3 (Semana 3):**
+
 - Full cutover
 - Monitoreo y optimización
 

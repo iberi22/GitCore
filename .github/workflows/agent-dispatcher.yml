@@ -82,10 +82,10 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         run: |
           gh issue comment ${{ github.event.issue.number }} --body "✅ Dispatcher Agent ran with strategy: ${{ inputs.strategy }}
-          
-          Performance: 
+
+          Performance:
           - Strategy parsing: ~60ns
           - Agent assignment: <1ns
-          
+
           💡 Using Rust implementation (100M faster than PowerShell)"
         continue-on-error: true

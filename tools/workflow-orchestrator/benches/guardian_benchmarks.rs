@@ -1,5 +1,5 @@
 //! Benchmarks for Guardian Core
-//! 
+//!
 //! Compares Rust implementation performance against PowerShell baseline
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
@@ -19,9 +19,9 @@ fn create_guardian() -> GuardianCore {
 /// Benchmark: Size penalty calculation
 fn bench_size_penalty(c: &mut Criterion) {
     let guardian = create_guardian();
-    
+
     let mut group = c.benchmark_group("size_penalty");
-    
+
     for (additions, deletions) in [
         (50, 50),      // Small PR
         (200, 100),    // Medium PR
@@ -35,14 +35,14 @@ fn bench_size_penalty(c: &mut Criterion) {
             },
         );
     }
-    
+
     group.finish();
 }
 
 /// Benchmark: Has tests detection
 fn bench_has_tests(c: &mut Criterion) {
     let guardian = create_guardian();
-    
+
     let test_cases = vec![
         (
             "small_with_tests",
@@ -63,22 +63,22 @@ fn bench_has_tests(c: &mut Criterion) {
             vec!["src/main.rs".to_string(), "src/lib.rs".to_string()],
         ),
     ];
-    
+
     let mut group = c.benchmark_group("has_tests");
-    
+
     for (name, files) in test_cases {
         group.bench_with_input(BenchmarkId::from_parameter(name), &files, |b, files| {
             b.iter(|| guardian.has_tests(black_box(files)))
         });
     }
-    
+
     group.finish();
 }
 
 /// Benchmark: Single scope detection
 fn bench_single_scope(c: &mut Criterion) {
     let guardian = create_guardian();
-    
+
     let test_cases = vec![
         (
             "single_scope",
@@ -93,22 +93,22 @@ fn bench_single_scope(c: &mut Criterion) {
             ],
         ),
     ];
-    
+
     let mut group = c.benchmark_group("single_scope");
-    
+
     for (name, files) in test_cases {
         group.bench_with_input(BenchmarkId::from_parameter(name), &files, |b, files| {
             b.iter(|| guardian.is_single_scope(black_box(files)))
         });
     }
-    
+
     group.finish();
 }
 
 /// Benchmark: Decision from confidence
 fn bench_decision_from_confidence(c: &mut Criterion) {
     let mut group = c.benchmark_group("decision");
-    
+
     for confidence in [50, 70, 90] {
         group.bench_with_input(
             BenchmarkId::from_parameter(format!("conf_{}", confidence)),
@@ -118,14 +118,14 @@ fn bench_decision_from_confidence(c: &mut Criterion) {
             },
         );
     }
-    
+
     group.finish();
 }
 
 /// Benchmark: Full confidence calculation (simulated)
 fn bench_full_confidence_calc(c: &mut Criterion) {
     let guardian = create_guardian();
-    
+
     c.bench_function("full_confidence_simulation", |b| {
         b.iter(|| {
             // Simulate full confidence calculation
@@ -138,7 +138,7 @@ fn bench_full_confidence_calc(c: &mut Criterion) {
             ]);
             let has_tests = guardian.has_tests(&files);
             let single_scope = guardian.is_single_scope(&files);
-            
+
             let mut confidence = 0u8;
             if ci_ok {
                 confidence += 40;
@@ -153,7 +153,7 @@ fn bench_full_confidence_calc(c: &mut Criterion) {
                 confidence += 10;
             }
             confidence = confidence.saturating_sub(size_penalty);
-            
+
             Decision::from_confidence(confidence, 70, None)
         })
     });

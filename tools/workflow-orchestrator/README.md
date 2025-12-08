@@ -13,11 +13,13 @@ The Workflow Orchestrator is a Rust-based CLI tool designed to execute critical 
 Auto-merge decision engine that evaluates Pull Requests and determines if they're safe to merge automatically.
 
 **Performance:**
+
 - **Rust:** <200ns per PR evaluation (~10M ops/sec)
 - **PowerShell baseline:** 2-3 seconds
 - **Speedup:** ~15,000,000x
 
 **Confidence Scoring:**
+
 ```
 Base Score:
 - CI passes: +40
@@ -39,6 +41,7 @@ Blockers (Immediate rejection):
 ```
 
 **Usage:**
+
 ```bash
 # Evaluate a PR
 workflow-orchestrator guardian --pr-number 123
@@ -54,6 +57,7 @@ workflow-orchestrator guardian --pr-number 123 --ci-mode
 ```
 
 **GitHub Actions Integration:**
+
 ```yaml
 - name: 🛡️ Run Guardian Agent
   run: |
@@ -72,6 +76,7 @@ workflow-orchestrator guardian --pr-number 123 --ci-mode
 AI agent load balancer that distributes GitHub Issues to available coding agents (Copilot, Jules) using configurable strategies.
 
 **Performance:**
+
 - **Strategy parsing:** ~60ns (100M faster than PowerShell)
 - **Agent label/assignee:** <1ns (sub-nanosecond)
 - **PowerShell baseline:** 5-10 seconds for full dispatch
@@ -104,6 +109,7 @@ Low Risk Keywords (weight: 1):
 ```
 
 **Risk Score Formula:**
+
 ```
 risk_score = sum(keyword_weights) + complexity_bonus
 risk_score = min(risk_score, 100)
@@ -113,6 +119,7 @@ Auto-escalation:
 ```
 
 **Usage:**
+
 ```bash
 # Dispatch all unassigned issues with round-robin
 workflow-orchestrator dispatch --strategy round-robin
@@ -131,6 +138,7 @@ workflow-orchestrator dispatch --strategy round-robin --dry-run
 ```
 
 **GitHub Actions Integration:**
+
 ```yaml
 - name: 🎯 Run Dispatcher Agent
   run: |
@@ -154,6 +162,7 @@ workflow-orchestrator dispatch --strategy round-robin --dry-run
 ---
 
 ## 🏗️ Architecture
+
       workflow-orchestrator guardian \
         --pr-number ${{ github.event.pull_request.number }} \
         --ci-mode
@@ -161,11 +170,13 @@ workflow-orchestrator dispatch --strategy round-robin --dry-run
       # Fallback to PowerShell
       pwsh ./scripts/guardian-core.ps1 -PrNumber ${{ github.event.pull_request.number }}
     fi
+
 ```
 
 ## 🏗️ Architecture
 
 ```
+
 workflow-orchestrator/
 ├── src/
 │   ├── main.rs              # CLI entry point
@@ -181,6 +192,7 @@ workflow-orchestrator/
 ├── benches/
 │   └── guardian_benchmarks.rs   # Performance benchmarks
 └── Cargo.toml
+
 ```
 
 ## 🧪 Testing
@@ -191,17 +203,20 @@ cargo test --lib
 ```
 
 **Integration Tests:**
+
 ```bash
 cargo test --test integration_guardian
 ```
 
 **All Tests:**
+
 ```bash
 cargo test
 # Expected: 14 tests passing
 ```
 
 **Benchmarks:**
+
 ```bash
 cargo bench --bench guardian_benchmarks
 ```
@@ -221,16 +236,19 @@ Latest results on `cargo bench`:
 ## 🔧 Development
 
 **Build:**
+
 ```bash
 cargo build --release
 ```
 
 **Run locally:**
+
 ```bash
 cargo run -- guardian --pr-number 123
 ```
 
 **Add new subcommand:**
+
 1. Create module in `src/` (e.g., `dispatcher_core.rs`)
 2. Add to `Commands` enum in `main.rs`
 3. Implement handler in `main()`

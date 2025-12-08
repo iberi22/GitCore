@@ -27,7 +27,7 @@ impl GitHubClient {
     /// Create a new issue
     pub async fn create_issue(&self, data: &IssueData) -> Result<u64> {
         let issues = self.client.issues(&self.owner, &self.repo);
-        
+
         let mut builder = issues
             .create(&data.title)
             .body(&data.body);
@@ -53,7 +53,7 @@ impl GitHubClient {
     /// Update an existing issue
     pub async fn update_issue(&self, number: u64, data: &IssueData) -> Result<()> {
         let issues = self.client.issues(&self.owner, &self.repo);
-        
+
         let mut builder = issues
             .update(number)
             .title(&data.title)

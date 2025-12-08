@@ -1,7 +1,7 @@
 //! Issue Mapping Storage
 //!
 //! Manages bidirectional mapping between local .md files and GitHub Issue numbers.
-//! 
+//!
 //! # File Format
 //! ```json
 //! {
