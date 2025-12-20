@@ -77,18 +77,25 @@ version: 3.3.0
 Initialize this project with Git-Core Protocol.
 
 # Method 1: Rust CLI (Recommended)
+
  cargo install --path . # If local
- # OR
+
+# OR
+
  gc init
 
-# Method 2: Shell Scripts (Legacy)
+# Method 2: Shell Scripts (Legacy - Use only if CLI fails)
+
 # Linux/macOS
-curl -fsSL https://raw.githubusercontent.com/iberi22/Git-Core-Protocol/main/install.sh | bash
+
+curl -fsSL <https://raw.githubusercontent.com/iberi22/Git-Core-Protocol/main/install.sh> | bash
 
 # Windows
-irm https://raw.githubusercontent.com/iberi22/Git-Core-Protocol/main/install.ps1 | iex
 
-After setup, read .✨/ARCHITECTURE.md and start with: gh issue list
+irm <https://raw.githubusercontent.com/iberi22/Git-Core-Protocol/main/install.ps1> | iex
+
+After setup, read .✨/ARCHITECTURE.md and start with: gc issue list
+
 ```
 
 **For AI Agents (auto mode):**
@@ -96,16 +103,94 @@ After setup, read .✨/ARCHITECTURE.md and start with: gh issue list
 For Windows:
 
 ```
-$env:GIT_CORE_AUTO = "1"; irm https://raw.githubusercontent.com/iberi22/Git-Core-Protocol/main/install.ps1 | iex
-Then execute: .\scripts\init_project.ps1 -Auto
+
+$env:GIT_CORE_AUTO = "1"; irm <https://raw.githubusercontent.com/iberi22/Git-Core-Protocol/main/install.ps1> | iex
+Then execute: gc init --auto
+
 ```
 
 For Linux/Mac:
 
 ```
-curl -fsSL https://raw.githubusercontent.com/iberi22/Git-Core-Protocol/main/install.sh | bash -s -- --auto
+
+curl -fsSL <https://raw.githubusercontent.com/iberi22/Git-Core-Protocol/main/install.sh> | bash -s -- --auto
 Then execute: ./scripts/init_project.sh
+
 ```
+
+---
+
+## 📖 CLI Usage Manual
+
+The `gc` (Git-Core) CLI is the primary tool for interacting with the protocol.
+
+> **⚠️ IMPORTANT:** Most commands (like `issue`, `pr`, `git`) require you to be inside a **Git repository** to function correctly. They automatically detect the repository context from the `.git` folder.
+
+### 🛠️ Core Commands
+
+| Command | Description | Example |
+|---------|-------------|---------|
+| `gc init` | Initialize Git-Core in a new project | `gc init` |
+| `gc info` | Show project info (Team/Solo, contributors) | `gc info` |
+
+### 📋 Workflow Management
+
+| Command | Description | Example |
+|---------|-------------|---------|
+| `gc issue list` | List issues (default: open) | `gc issue list --limit 5` |
+| `gc issue list --assigned-to-me` | List issues assigned to you | `gc issue list --assigned-to-me` |
+| `gc issue list --state <STATE>` | Filter by state (open/closed/all) | `gc issue list --state closed` |
+| `gc pr list` | List open Pull Requests | `gc pr list` |
+| `gc task start` | Start a new task (creates branch & issue) | `gc task start "Fix login bug"` |
+| `gc finish` | Finish current task (PR + Report) | `gc finish` |
+
+### 🔍 Context & Git
+
+| Command | Description | Example |
+|---------|-------------|---------|
+| `gc git status` | Show concise git status | `gc git status` |
+| `gc git log` | Show recent git history | `gc git log --limit 5` |
+| `gc context list` | List available agent roles | `gc context list` |
+| `gc context equip <ROLE>` | Load a specific agent role | `gc context equip security` |
+
+### 🤖 Automation & CI
+
+| Command | Description | Example |
+|---------|-------------|---------|
+| `gc validate run` | Validate workflow runs | `gc validate run` |
+| `gc validate analyze` | Analyze repo (errors, perf, security) | `gc validate analyze` |
+| `gc report` | Generate AI Pull Request report | `gc report --pr 42` |
+| `gc ci-detect` | Detect CI environment details | `gc ci-detect` |
+| `gc telemetry` | Send anonymous usage stats | `gc telemetry` |
+
+---
+
+### 🚨 Important Notes
+
+1. **Repository Context Required:**
+   - Commands like `gc issue`, `gc pr`, and `gc git` need to be run **inside a Git repository**.
+   - The CLI automatically detects the repository by looking for the `.git` folder.
+   - If you run these commands outside a repo, you'll see: `fatal: not a git repository`
+
+2. **GitHub Token:**
+   - Set your GitHub token for API access:
+     ```bash
+     # Windows (PowerShell)
+     $env:GITHUB_TOKEN = "ghp_your_token_here"
+     
+     # Linux/macOS
+     export GITHUB_TOKEN="ghp_your_token_here"
+     ```
+   - Required for: `gc issue`, `gc pr`, `gc context equip`, `gc report`
+
+3. **Installation:**
+   - The CLI binary is named `gc-cli` after installation
+   - You can create an alias `gc` for convenience:
+     ```bash
+     # Add to your shell profile (~/.bashrc, ~/.zshrc, or PowerShell profile)
+     Set-Alias gc gc-cli  # PowerShell
+     alias gc='gc-cli'    # Bash/Zsh
+     ```
 
 ---
 
@@ -215,6 +300,7 @@ Critical operations (deletions, deploys) require explicit confirmation:
 ### 🧬 Self-Healing CI/CD
 
 Automated error classification and retry for transient failures:
+
 - **Transient errors** (timeouts, rate limits): Auto-retry
 - **Dependency errors**: Creates issue for review
 - **Test failures**: Creates issue with diagnosis
