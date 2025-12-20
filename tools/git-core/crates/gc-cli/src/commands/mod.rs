@@ -6,6 +6,10 @@ pub mod telemetry;
 pub mod ci_detect;
 pub mod task;
 pub mod finish;
+pub mod issue;
+pub mod pr;
+pub mod git;
+pub mod info;
 
 pub use init::InitArgs;
 pub use context::ContextCmd;
@@ -15,6 +19,10 @@ pub use telemetry::TelemetryArgs;
 pub use ci_detect::CiDetectArgs;
 pub use task::TaskArgs;
 pub use finish::FinishArgs;
+pub use issue::IssueArgs;
+pub use pr::PrArgs;
+pub use git::GitArgs;
+pub use info::InfoArgs;
 
 #[cfg(test)]
 pub mod mocks;

@@ -8,7 +8,7 @@ pub struct Cli {
 }
 
 mod commands;
-use commands::{InitArgs, ContextCmd, ReportCmd, ValidateCmd, TelemetryArgs, CiDetectArgs, TaskArgs, FinishArgs};
+use commands::{InitArgs, ContextCmd, ReportCmd, ValidateCmd, TelemetryArgs, CiDetectArgs, TaskArgs, FinishArgs, IssueArgs, PrArgs, GitArgs, InfoArgs};
 
 #[derive(Subcommand)]
 pub enum Commands {
@@ -39,6 +39,14 @@ pub enum Commands {
     Task(TaskArgs),
     /// Finish current Task (Automation)
     Finish(FinishArgs),
+    /// Manage Issues
+    Issue(IssueArgs),
+    /// Manage Pull Requests
+    Pr(PrArgs),
+    /// Git Context
+    Git(GitArgs),
+    /// Project Info
+    Info(InfoArgs),
 }
 
 #[tokio::main]
@@ -89,6 +97,24 @@ async fn main() -> color_eyre::Result<()> {
             let system = gc_adapter_system::TokioSystem;
             let github = gc_adapter_github::OctocrabGitHub::new();
             commands::finish::execute(args, &system, &github).await?;
+        }
+        Commands::Issue(args) => {
+            let github = gc_adapter_github::OctocrabGitHub::new();
+            let system = gc_adapter_system::TokioSystem;
+            commands::issue::execute(args, &github, &system).await?;
+        }
+        Commands::Pr(args) => {
+            let github = gc_adapter_github::OctocrabGitHub::new();
+            let system = gc_adapter_system::TokioSystem;
+            commands::pr::execute(args, &github, &system).await?;
+        }
+        Commands::Git(args) => {
+            let system = gc_adapter_system::TokioSystem;
+            commands::git::execute(args, &system).await?;
+        }
+        Commands::Info(args) => {
+            let system = gc_adapter_system::TokioSystem;
+            commands::info::execute(args, &system).await?;
         }
     }
 
