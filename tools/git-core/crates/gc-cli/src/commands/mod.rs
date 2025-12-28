@@ -11,6 +11,7 @@ pub mod pr;
 pub mod git;
 pub mod info;
 pub mod check;
+pub mod next;
 
 pub use init::InitArgs;
 pub use context::ContextCmd;
@@ -25,6 +26,7 @@ pub use pr::PrArgs;
 pub use git::GitArgs;
 pub use info::InfoArgs;
 pub use check::CheckArgs;
+pub use next::NextArgs;
 
 #[cfg(test)]
 pub mod mocks;
