@@ -72,15 +72,38 @@ if ($currentPath -notlike "*$INSTALL_DIR*") {
     Write-Host "✅ Added $INSTALL_DIR to PATH" -ForegroundColor Green
 }
 
+# Configure gc alias (overriding Get-Content)
+Write-Host ""
+Write-Host "🔧 Configuring 'gc' alias..." -ForegroundColor Yellow
+$PROFILE_PATH = $PROFILE.CurrentUserAllHosts
+if (-not $PROFILE_PATH) {
+    $PROFILE_PATH = "$HOME\Documents\PowerShell\Microsoft.PowerShell_profile.ps1"
+}
+
+$ALIAS_COMMAND = "Remove-Item -Path alias:gc -ErrorAction SilentlyContinue; Set-Alias -Name gc -Value '$BINARY_PATH' -Scope Global"
+
+if (-not (Test-Path $PROFILE_PATH)) {
+    New-Item -ItemType File -Path $PROFILE_PATH -Force | Out-Null
+}
+
+$profileContent = Get-Content $PROFILE_PATH -Raw -ErrorAction SilentlyContinue
+if ($profileContent -notmatch "Set-Alias -Name gc -Value '$BINARY_NAME'") {
+    Add-Content -Path $PROFILE_PATH -Value "`n# Git-Core CLI Alias`n$ALIAS_COMMAND"
+    Write-Host "✅ Added 'gc' alias to `$PROFILE" -ForegroundColor Green
+}
+
+# Apply to current session
+Invoke-Expression $ALIAS_COMMAND
+
 Write-Host ""
 Write-Host "✅ Installation complete!" -ForegroundColor Green
 Write-Host ""
 
 # Test installation
 try {
-    & "$BINARY_PATH" --version
+    gc --version
     Write-Host ""
-    Write-Host "Run 'git-core --help' to get started" -ForegroundColor Cyan
+    Write-Host "Run 'gc --help' to get started" -ForegroundColor Cyan
 } catch {
-    Write-Host "⚠️  Please restart your terminal to use git-core" -ForegroundColor Yellow
+    Write-Host "⚠️  Please restart your terminal to use 'gc'" -ForegroundColor Yellow
 }

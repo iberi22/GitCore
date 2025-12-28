@@ -3,6 +3,10 @@ name = "gc-cli"
 version.workspace = true
 edition.workspace = true
 
+[[bin]]
+name = "git-core"
+path = "src/main.rs"
+
 [dependencies]
 clap.workspace = true
 tokio.workspace = true
