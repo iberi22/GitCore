@@ -34,8 +34,8 @@ pub trait GitHubPort: Send + Sync {
     async fn get_file_content(&self, owner: &str, repo: &str, branch: &str, path: &str) -> Result<String>;
     async fn get_pr_diff(&self, owner: &str, repo: &str, pr_number: u64) -> Result<String>;
     async fn post_comment(&self, owner: &str, repo: &str, issue_number: u64, body: &str) -> Result<()>;
-    async fn list_issues(&self, owner: &str, repo: &str, state: Option<&str>, assignee: Option<&str>) -> Result<Vec<Issue>>;
-    async fn list_prs(&self, owner: &str, repo: &str, state: Option<&str>) -> Result<Vec<PullRequest>>;
+    async fn list_issues(&self, owner: &str, repo: &str, state: Option<String>, assignee: Option<String>) -> Result<Vec<Issue>>;
+    async fn list_prs(&self, owner: &str, repo: &str, state: Option<String>) -> Result<Vec<PullRequest>>;
 }
 
 #[async_trait]

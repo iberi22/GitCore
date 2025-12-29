@@ -43,14 +43,14 @@ pub async fn execute(
             println!("{}", style(format!("Fetching issues for {}/{}...", owner, repo)).dim());
 
             let current_user;
-            let effective_assignee = if assigned_to_me {
-                current_user = Some(github.check_auth().await?);
-                current_user.as_deref()
+            let effective_assignee: Option<String> = if assigned_to_me {
+                current_user = github.check_auth().await?;
+                Some(current_user)
             } else {
-                assignee.as_deref()
+                assignee.clone()
             };
 
-            let issues = github.list_issues(&owner, &repo, Some(&state), effective_assignee).await?;
+            let issues = github.list_issues(&owner, &repo, Some(state.clone()), effective_assignee).await?;
 
             if issues.is_empty() {
                 println!("No issues found.");

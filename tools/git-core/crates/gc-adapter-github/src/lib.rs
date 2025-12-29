@@ -93,8 +93,8 @@ impl GitHubPort for OctocrabGitHub {
         Ok(())
     }
 
-    async fn list_issues(&self, owner: &str, repo: &str, state: Option<&str>, assignee: Option<&str>) -> Result<Vec<Issue>> {
-        let state = match state {
+    async fn list_issues(&self, owner: &str, repo: &str, state: Option<String>, assignee: Option<String>) -> Result<Vec<Issue>> {
+        let state = match state.as_deref() {
             Some("closed") => octocrab::params::State::Closed,
             Some("all") => octocrab::params::State::All,
             _ => octocrab::params::State::Open,
@@ -105,7 +105,7 @@ impl GitHubPort for OctocrabGitHub {
             .list()
             .state(state);
 
-        if let Some(a) = assignee {
+        if let Some(a) = assignee.as_deref() {
             builder = builder.assignee(Filter::Matches(a));
         }
 
@@ -127,8 +127,8 @@ impl GitHubPort for OctocrabGitHub {
         Ok(issues)
     }
 
-    async fn list_prs(&self, owner: &str, repo: &str, state: Option<&str>) -> Result<Vec<PullRequest>> {
-        let state = match state {
+    async fn list_prs(&self, owner: &str, repo: &str, state: Option<String>) -> Result<Vec<PullRequest>> {
+        let state = match state.as_deref() {
             Some("closed") => octocrab::params::State::Closed,
             Some("all") => octocrab::params::State::All,
             _ => octocrab::params::State::Open,

@@ -34,3 +34,6 @@ slug = "0.1.6"
 async-trait = "0.1.89"
 mockall = "0.14.0"
 tokio = { workspace = true, features = ["full"] }
+assert_cmd = "2.0"
+assert_fs = "1.1"
+predicates = "3.1"
