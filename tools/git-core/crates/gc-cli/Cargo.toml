@@ -20,6 +20,7 @@ gc-core.workspace = true
 gc-adapter-github.workspace = true
 gc-adapter-fs.workspace = true
 gc-adapter-system.workspace = true
+gc-adapter-cli = { path = "../gc-adapter-cli" }
 serde_json.workspace = true
 gc-validator = { version = "0.1.0", path = "../gc-validator" }
 chrono = { version = "0.4", features = ["serde"] }

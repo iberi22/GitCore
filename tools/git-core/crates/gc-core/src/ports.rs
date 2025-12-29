@@ -52,3 +52,13 @@ pub trait SystemPort: Send + Sync {
     async fn run_command(&self, name: &str, args: &[String]) -> Result<()>;
     async fn run_command_output(&self, name: &str, args: &[String]) -> Result<String>;
 }
+
+#[async_trait]
+pub trait JulesPort: Send + Sync {
+    async fn execute_task(&self, task_desc: &str) -> Result<()>;
+}
+
+#[async_trait]
+pub trait CopilotPort: Send + Sync {
+    async fn suggest(&self, prompt: &str) -> Result<String>;
+}

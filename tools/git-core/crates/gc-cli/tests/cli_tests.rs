@@ -72,6 +72,15 @@ fn test_workflow_help() {
         .success();
 }
 
+#[test]
+fn test_dispatch_help() {
+    git_core()
+        .args(["dispatch", "--help"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Agent"));
+}
+
 // ============================================================================
 // CHECK COMMAND TESTS
 // ============================================================================
