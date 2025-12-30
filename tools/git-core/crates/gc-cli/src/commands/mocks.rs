@@ -10,6 +10,8 @@ mock! {
         async fn write_file(&self, path: &str, content: &str) -> Result<()>;
         async fn read_file(&self, path: &str) -> Result<String>;
         async fn exists(&self, path: &str) -> Result<bool>;
+        async fn move_file(&self, source: &str, dest: &str) -> Result<()>;
+        async fn list_files(&self, dir: &str, pattern: Option<&str>) -> Result<Vec<String>>;
     }
 }
 
@@ -29,7 +31,7 @@ mock! {
     impl GitHubPort for GitHubPort {
         async fn check_auth(&self) -> Result<String>;
         async fn create_repo(&self, name: &str, private: bool) -> Result<()>;
-        async fn create_issue(&self, title: &str, body: &str, labels: &[String]) -> Result<()>;
+        async fn create_issue(&self, owner: &str, repo: &str, title: &str, body: &str, labels: &[String]) -> Result<()>;
         async fn create_label(&self, name: &str, color: &str, desc: &str) -> Result<()>;
         async fn get_file_content(&self, owner: &str, repo: &str, branch: &str, path: &str) -> Result<String>;
         async fn get_pr_diff(&self, owner: &str, repo: &str, pr_number: u64) -> Result<String>;
