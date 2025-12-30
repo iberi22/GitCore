@@ -8,6 +8,11 @@ param (
     [string]$AgentOverride
 )
 
+# 0. Ensure 'gc' alias doesn't conflict with Get-Content
+if ((Get-Alias gc -ErrorAction SilentlyContinue).Definition -eq "Get-Content") {
+    Remove-Item alias:gc -Force -ErrorAction SilentlyContinue
+}
+
 # 1. Scan for Issues
 Write-Host "🔍 Scanning Protocol for pending tasks..." -ForegroundColor Cyan
 
