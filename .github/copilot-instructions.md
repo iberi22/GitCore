@@ -768,12 +768,17 @@ cargo build --release
 | Command | Description | When to Use |
 |---------|-------------|-------------|
 | `gc init [name]` | Initialize new project + protocol | Start of project |
-| `gc context list` | List available agent roles | Discovery |
-| `gc context equip <role>`| Switch AI context (e.g. `security`) | Changing tasks |
+| `gc issue list` | List issues (filterable) | Task selection |
+| `gc issue create`| Create issue directly on GitHub | Task creation |
+| `gc issue sync` | Sync local markdown issues to GitHub | Batch creation |
+| `gc next` | Select next priority task | Workflow automation |
+| `gc context equip`| Switch AI context (e.g. `security`) | Changing tasks |
 | `gc report` | Generate AI Pull Request Report | Before merging |
 | `gc validate` | Check CI workflows & integrity | Pre-push check |
 | `gc telemetry` | Send anonymous usage stats | Automated |
 | `gc ci-detect` | Detect environment (CI/Local) | Automated |
+| `gc check` | Verify environment health | Troubleshooting |
+| `gc update` | Upgrade protocol version | Maintenance |
 
 ### 🚀 Simplified AI Agent Workflow (Sofisticación Invisible)
 
@@ -802,40 +807,40 @@ cargo build --release
 | `./scripts/equip-agent.ps1` | `gc context equip` |
 | `./scripts/ai-report.ps1` | `gc report` |
 | `./scripts/send-telemetry.ps1`| `gc telemetry` |
+| `./scripts/next-task.ps1` | `gc next` |
+| `./scripts/sync-issues.ps1` | `gc issue sync` |
+| `./scripts/install-cli.ps1` | `gc update` |
 
 ### AI Agent Usage
 
 **When bootstrapping a new project:**
 ```bash
-# Step 1: Install protocol (scripts are visible and auditable)
+# Step 1: Install protocol
 curl -fsSL https://raw.githubusercontent.com/iberi22/Git-Core-Protocol/main/install.sh | bash
 
 # Or if CLI is available:
-git-core init my-project
+gc init my-project
 
 # Step 2: Verify installation
-git-core check
+gc check
 ```
 
 **When upgrading existing project:**
 ```bash
-# Safe upgrade (preserves your ARCHITECTURE.md)
-git-core upgrade
+# Safe upgrade
+gc update
 
 # Check what changed
-git-core status
+gc info
 ```
 
 **When troubleshooting:**
 ```bash
 # Check integrity
-git-core check
-
-# Auto-fix issues
-git-core check --fix
+gc check
 
 # Full status report
-git-core status
+gc info
 ```
 
 ### Legacy Scripts (Alternative)
