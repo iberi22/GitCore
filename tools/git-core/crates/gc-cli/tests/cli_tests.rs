@@ -57,6 +57,20 @@ fn test_update_help() {
 }
 
 #[test]
+fn test_update_smoke() {
+    // We cannot easily test full network download in unit tests without mocking reqwest.
+    // However, we can test that the command accepts arguments and fails gracefully or prints help.
+    let temp = assert_fs::TempDir::new().unwrap();
+    git_core()
+        .arg("update")
+        .current_dir(&temp)
+        .assert()
+        // It might fail due to network or return success saying update available
+        // We just check it doesn't panic.
+        .code(predicate::in_iter(vec![0, 1]));
+}
+
+#[test]
 fn test_context_help() {
     git_core()
         .args(["context", "--help"])

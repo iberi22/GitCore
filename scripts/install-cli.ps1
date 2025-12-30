@@ -4,7 +4,7 @@
 $ErrorActionPreference = "Stop"
 
 $REPO = "iberi22/Git-Core-Protocol"
-$BINARY_NAME = "git-core"
+$BINARY_NAME = "gc"
 $INSTALL_DIR = "$env:LOCALAPPDATA\git-core"
 $RAW_URL = "https://raw.githubusercontent.com/$REPO/main/bin"
 
@@ -29,7 +29,7 @@ New-Item -ItemType Directory -Force -Path $INSTALL_DIR | Out-Null
 $BINARY_PATH = "$INSTALL_DIR\$BINARY_NAME.exe"
 
 # Try repo's bin/ folder first (fastest)
-$REPO_BIN_URL = "$RAW_URL/${BINARY_NAME}-${TARGET}.exe"
+$REPO_BIN_URL = "$RAW_URL/${BINARY_NAME}.exe"
 Write-Host "Checking for pre-built binary..."
 
 try {
@@ -49,7 +49,7 @@ try {
 
         if ($LATEST_RELEASE) {
             Write-Host "Latest release: $LATEST_RELEASE" -ForegroundColor Green
-            $DOWNLOAD_URL = "https://github.com/$REPO/releases/download/$LATEST_RELEASE/${BINARY_NAME}-${TARGET}.exe"
+            $DOWNLOAD_URL = "https://github.com/$REPO/releases/download/$LATEST_RELEASE/${BINARY_NAME}.exe"
 
             Write-Host "Downloading from release..."
             Invoke-WebRequest -Uri $DOWNLOAD_URL -OutFile $BINARY_PATH -UseBasicParsing
@@ -80,14 +80,14 @@ if (-not $PROFILE_PATH) {
     $PROFILE_PATH = "$HOME\Documents\PowerShell\Microsoft.PowerShell_profile.ps1"
 }
 
-$ALIAS_COMMAND = "Remove-Item -Path alias:gc -ErrorAction SilentlyContinue; Set-Alias -Name gc -Value '$BINARY_PATH' -Scope Global"
+$ALIAS_COMMAND = "if (Get-Alias gc -ErrorAction SilentlyContinue) { Remove-Item alias:gc -Force }; Set-Alias -Name gc -Value '$BINARY_PATH' -Scope Global"
 
 if (-not (Test-Path $PROFILE_PATH)) {
     New-Item -ItemType File -Path $PROFILE_PATH -Force | Out-Null
 }
 
 $profileContent = Get-Content $PROFILE_PATH -Raw -ErrorAction SilentlyContinue
-if ($profileContent -notmatch "Set-Alias -Name gc -Value '$BINARY_NAME'") {
+if ($profileContent -notmatch "Set-Alias -Name gc -Value .*gc\.exe") {
     Add-Content -Path $PROFILE_PATH -Value "`n# Git-Core CLI Alias`n$ALIAS_COMMAND"
     Write-Host "✅ Added 'gc' alias to `$PROFILE" -ForegroundColor Green
 }
