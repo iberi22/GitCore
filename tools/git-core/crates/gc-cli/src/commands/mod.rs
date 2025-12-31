@@ -15,6 +15,7 @@ pub mod next;
 pub mod update;
 pub mod workflow;
 pub mod dispatch;
+pub mod analyze;
 
 pub use init::InitArgs;
 pub use context::ContextCmd;
@@ -33,6 +34,7 @@ pub use next::NextArgs;
 pub use update::UpdateArgs;
 pub use workflow::WorkflowArgs;
 pub use dispatch::DispatchArgs;
+pub use analyze::AnalyzeArgs;
 
 #[cfg(test)]
 pub mod mocks;

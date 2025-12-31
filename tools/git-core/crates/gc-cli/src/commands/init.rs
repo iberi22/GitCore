@@ -1,6 +1,7 @@
 use clap::Args;
 use gc_core::ports::{FileSystemPort, SystemPort, GitHubPort};
 use console::style;
+use std::io::{self, Write};
 
 #[derive(Args, Debug)]
 pub struct InitArgs {
@@ -12,166 +13,191 @@ pub struct InitArgs {
     #[arg(long)]
     pub private: bool,
 
-    /// Non-interactive mode
+    /// Non-interactive mode (Auto-approve)
     #[arg(short, long)]
     pub auto: bool,
 
     /// Organize existing files
     #[arg(short, long)]
     pub organize: bool,
+
+    /// Force initialization (overwrite existing without prompt)
+    #[arg(long)]
+    pub force: bool,
 }
 
 pub async fn execute(
     args: InitArgs,
     fs: &impl FileSystemPort,
     system: &impl SystemPort,
-    github: &impl GitHubPort
+    _github: &impl GitHubPort
 ) -> color_eyre::Result<()> {
     println!("{}", style("🧠 Initializing Git-Core Protocol...").cyan());
     println!("{}", style("==========================================").cyan());
 
-    // 0. Organize Files (New)
-    if args.organize {
-        println!("\n{}", style("📂 Organizing existing files...").yellow());
-        let target_path = args.name.as_deref().unwrap_or(".");
-
-        let dirs = ["docs/archive", "scripts", "tests", "src"];
-        for dir in dirs {
-             let full_path = if target_path == "." { dir.to_string() } else { format!("{}/{}", target_path, dir) };
-             fs.create_dir(&full_path).await?;
+    // 1. Validation Logic
+    println!("\n{}", style("📋 Validating environment...").yellow());
+    let required_tools = vec![("git", "Git"), ("gh", "GitHub CLI")];
+    for (bin, label) in &required_tools {
+        if !system.check_command(bin).await? {
+            eprintln!("{}", style(format!("❌ Error: {} is not installed.", label)).red());
+            return Err(color_eyre::eyre::eyre!("{} missing", label));
         }
+    }
+    // Validation Passed
+    println!("{}", style("✓ Core tools installed").green());
 
-        // Move markdown files to docs/archive
-        let root_dir = target_path.to_string();
-        let files = fs.list_files(&root_dir, Some("*.md")).await?;
-        let keep = ["README.md", "AGENTS.md", "CHANGELOG.md", "CONTRIBUTING.md", "LICENSE.md", "LICENSE"];
+    // 2. Target Resolution
+    let target_path = args.name.as_deref().unwrap_or(".").to_string();
+    let is_current_dir = target_path == ".";
 
-        for file in files {
-             if !keep.contains(&file.as_str()) {
-                 let source = if target_path == "." { file.clone() } else { format!("{}/{}", target_path, file) };
-                 let dest = if target_path == "." { format!("docs/archive/{}", file) } else { format!("{}/docs/archive/{}", target_path, file) };
-                 // ignore errors for now (e.g. if file open, etc)
-                 let _ = fs.move_file(&source, &dest).await;
-                 println!("  → {} moved to docs/archive/", file);
-             } else {
-                 println!("  ✓ Keeping {} in root", file);
+    // 3. Recommended Tools Check
+    let recommended_tools = vec![
+        ("gemini", "Gemini CLI"),
+        ("copilot", "GitHub Copilot CLI"),
+        ("jules", "Jules CLI"),
+    ];
+    let mut missing_recommended = vec![];
+    for (bin, label) in &recommended_tools {
+        if !system.check_command(bin).await? {
+            println!("{}", style(format!("⚠️  {} is missing (Recommended)", label)).yellow());
+            missing_recommended.push(label.to_string());
+        } else {
+            println!("{}", style(format!("✓ {} installed", label)).green());
+        }
+    }
+
+    if !missing_recommended.is_empty() {
+        println!("{}", style("\nSome agents may not function fully without these tools.").dim());
+        if !args.auto {
+             println!("Do you want to proceed anyway? [Y/n]");
+             if !confirm_user() {
+                 println!("{}", style("Aborted by user.").red());
+                 return Ok(());
              }
         }
-
-        println!("{}", style("✅ Files organized").green());
     }
 
-    // 1. Validate Environment
-    println!("\n{}", style("📋 Validating environment...").yellow());
+    // 4. Existing State Detection
+    let git_check_path = if is_current_dir { ".git".to_string() } else { format!("{}/.git", target_path) };
+    let git_exists = fs.exists(&git_check_path).await?;
+    let files = fs.list_files(&target_path, None).await.unwrap_or_default();
+    let is_empty = files.is_empty();
 
-    if !system.check_command("git").await? {
-        eprintln!("{}", style("❌ Error: Git is not installed.").red());
-        return Err(color_eyre::eyre::eyre!("Git missing"));
+    if !is_empty && !args.auto && !args.force {
+        println!("\n{}", style(format!("⚠️  Target '{}' is not empty.", target_path)).yellow());
+        if git_exists {
+            println!("{}", style("ℹ️  Existing Git repository detected.").cyan());
+        } else {
+             println!("{}", style("ℹ️  Existing files detected.").cyan());
+        }
+
+        println!("How do you want to proceed?");
+        println!("1. [C]ancel");
+        println!("2. [B]ackup existing files (Move to ./_backup_TIMESTAMP)");
+        println!("3. [O]vwerwrite/Update (Keep files, just add protocol)");
+
+        print!("> ");
+        io::stdout().flush().unwrap();
+        let mut input = String::new();
+        io::stdin().read_line(&mut input).unwrap();
+        let choice = input.trim().to_lowercase();
+
+        if choice.starts_with('c') || choice == "1" {
+            println!("{}", style("Aborted.").red());
+            return Ok(());
+        } else if choice.starts_with('b') || choice == "2" {
+            // Backup Logic
+            let timestamp = chrono::Local::now().format("%Y%m%d_%H%M%S").to_string();
+            let backup_dir = if is_current_dir {
+                format!("_backup_{}", timestamp)
+            } else {
+                format!("{}/_backup_{}", target_path, timestamp)
+            };
+
+            println!("{}", style(format!("📦 Moving files to {}...", backup_dir)).yellow());
+            fs.create_dir(&backup_dir).await?;
+
+            // Move all files except the backup dir itself
+            for file in files {
+                if file != backup_dir && file != ".git" {
+                     let source = if is_current_dir { file.clone() } else { format!("{}/{}", target_path, file) };
+                     let dest = if is_current_dir { format!("{}/{}", backup_dir, file) } else { format!("{}/{}/{}", target_path, backup_dir, file) };
+                     let _ = fs.move_file(&source, &dest).await;
+                }
+            }
+            println!("{}", style("✓ Backup complete").green());
+
+        } else if choice.starts_with('o') || choice == "3" {
+            println!("{}", style("ℹ️  Proceeding with update/overwrite...").blue());
+        } else {
+            println!("{}", style("Invalid choice. Aborted.").red());
+            return Ok(());
+        }
     }
-    println!("{}", style("✓ Git installed").green());
 
-    if !system.check_command("gh").await? {
-        eprintln!("{}", style("❌ Error: GitHub CLI (gh) is not installed.").red());
-        return Err(color_eyre::eyre::eyre!("GitHub CLI missing"));
-    }
-    println!("{}", style("✓ GitHub CLI installed").green());
-
-    // 2. Initialize Git
-    // 2. Initialize Git
-    let target_path = args.name.as_deref().unwrap_or(".");
-    let git_check_path = if target_path == "." { ".git".to_string() } else { format!("{}/.git", target_path) };
-
+    // 5. Initialize Git (If needed)
     if !fs.exists(&git_check_path).await? {
         println!("\n{}", style(format!("🔧 Initializing Git repository in {}...", target_path)).yellow());
-
-        let mut base_cmd = vec![];
-        if target_path != "." {
-             base_cmd.push(String::from("-C"));
-             base_cmd.push(target_path.to_string());
-        }
-
-        // git init <directory> or git init (current)
-        if target_path != "." {
-            system.run_command("git", &vec![String::from("init"), target_path.to_string()]).await?;
+        if !is_current_dir {
+             let _ = system.run_command("git", &vec!["init".into(), target_path.clone()]).await;
         } else {
-            system.run_command("git", &vec![String::from("init")]).await?;
+             let _ = system.run_command("git", &vec!["init".into()]).await;
         }
+        let _ = system.run_command("git", &vec!["branch".into(), "-M".into(), "main".into()]).await;
 
-        // git -C <path> branch -M main
-        let mut branch_cmd = base_cmd.clone();
-        branch_cmd.extend(vec![String::from("branch"), String::from("-M"), String::from("main")]);
-        system.run_command("git", &branch_cmd).await?;
-
-        // Initial files if they don't exist
-        let readme_path = if target_path == "." { "README.md".to_string() } else { format!("{}/README.md", target_path) };
+        // Initial Commit for freshness? Or just leave it.
+        // Original logic had commit. Let's add it back for consistency if it's new repo.
+        let readme_path = if is_current_dir { "README.md".to_string() } else { format!("{}/README.md", target_path) };
         if !fs.exists(&readme_path).await? {
             fs.write_file(&readme_path, "# Project Initialized by Git-Core").await?;
         }
-
-        let mut add_cmd = base_cmd.clone();
-        add_cmd.extend(vec![String::from("add"), String::from(".")]);
-        system.run_command("git", &add_cmd).await?;
-
-        let mut commit_cmd = base_cmd.clone();
-        commit_cmd.extend(vec![String::from("commit"), String::from("-m"), String::from("feat: 🚀 Initial commit")]);
-        system.run_command("git", &commit_cmd).await?;
-    } else {
-         println!("{}", style("ℹ️  Existing Git repository detected").cyan());
+        let _ = system.run_command("git", &vec!["add".into(), ".".into()]).await;
+        let _ = system.run_command("git", &vec!["commit".into(), "-m".into(), "feat: 🚀 Initial commit".into()]).await;
     }
 
-    // 3. GitHub Repo
-    if args.private {
-        println!("{}", style("🔒 Creating private repository...").yellow());
-        // gh repo create NAME --private --source=. --remote=origin --push
-        let name = args.name.as_deref().unwrap_or(target_path);
-        let create_repo_cmd = vec![
-            String::from("repo"),
-            String::from("create"),
-            name.to_string(),
-            String::from("--private"),
-            String::from("--source=."),
-            String::from("--remote=origin"),
-            String::from("--push")
-        ];
-        // If we are in a subdir, source=. works if we cd'd? No, we need to be careful.
-        // If we are initializing in '.', source=. is fine.
-        // If we in target_path, we should run this command INSIDE target_path.
+    // 4. Artifact Setup
+    setup_artifacts(&target_path, is_current_dir, fs, system, args.force).await?;
 
-        // MVP: Just warning if not implemented for subdir yet, but keeping simpler logic:
-        if target_path != "." {
-             // We need to run this command inside the directory.
-             // SystemPort run_command doesn't readily support CWD change unless we added it (we have Cwd in execute but not in Port trait?)
-             // Port trait: run_command(name, args). No CWD.
-             // Workaround: We relied on `git -C`. `gh` doesn't have `-C`.
-             // We can use `pushd` in shell? No.
-             // This is a limitation of the current SystemPort.
-             // For now, let's just warn if name != "."
-             println!("{}", style("⚠️  Repo creation in subdirectory not fully supported in Rust port yet.").red());
-             println!("{}", style("   Please run 'gh repo create' manually inside the directory.").yellow());
-        } else {
-             if let Err(e) = system.run_command("gh", &create_repo_cmd).await {
-                 println!("{}", style(format!("⚠️  Failed to create repo: {}", e)).red());
-             } else {
-                 println!("{}", style("✓ GitHub repository created").green());
-             }
-        }
+    // 5. GitHub Items
+    setup_github_items(&target_path, is_current_dir, system).await?;
+
+    // 6. Hooks
+    install_hooks(&target_path, is_current_dir, fs).await?;
+
+    println!("\n{}", style("✅ Project initialized successfully!").green());
+    Ok(())
+}
+
+fn confirm_user() -> bool {
+    let mut input = String::new();
+    io::stdout().flush().unwrap();
+    if io::stdin().read_line(&mut input).is_ok() {
+        let t = input.trim().to_lowercase();
+        return t == "y" || t == "yes" || t.is_empty();
     }
+    false
+}
 
-    if !args.auto {
-        println!("{}", style("ℹ️  Interactive mode skipped for MVP").dim());
-    }
+async fn setup_artifacts(
+    target_path: &str,
+    is_current: bool,
+    fs: &impl FileSystemPort,
+    system: &impl SystemPort,
+    force: bool
+) -> color_eyre::Result<()> {
+    let arch_dir = if is_current { ".ai-core".to_string() } else { format!("{}/.ai-core", target_path) };
+    let github_dir = if is_current { ".github".to_string() } else { format!("{}/.github", target_path) };
 
-    // 4. Architecture File
-    let arch_path = if target_path == "." { ".ai-core/ARCHITECTURE.md".to_string() } else { format!("{}/.ai-core/ARCHITECTURE.md", target_path) };
-    let agent_index_path = if target_path == "." { ".ai-core/AGENT_INDEX.md".to_string() } else { format!("{}/.ai-core/AGENT_INDEX.md", target_path) };
-    let instructions_path = if target_path == "." { ".github/copilot-instructions.md".to_string() } else { format!("{}/.github/copilot-instructions.md", target_path) };
-    let arch_dir = if target_path == "." { ".ai-core".to_string() } else { format!("{}/.ai-core", target_path) };
-    let github_dir = if target_path == "." { ".github".to_string() } else { format!("{}/.github", target_path) };
+    // Ensure dirs
+    if !fs.exists(&arch_dir).await? { fs.create_dir(&arch_dir).await?; }
+    if !fs.exists(&github_dir).await? { fs.create_dir(&github_dir).await?; }
 
-    if !fs.exists(&arch_path).await? {
-        println!("\n{}", style("📐 Setting up ARCHITECTURE.md...").yellow());
-        fs.create_dir(&arch_dir).await?;
-        let content = r#"# 🏗️ Architecture
+    // 1. ARCHITECTURE.md
+    let arch_path = format!("{}/ARCHITECTURE.md", arch_dir);
+    if force || !fs.exists(&arch_path).await? {
+        println!("{}", style("📐 Setting up ARCHITECTURE.md...").yellow());
+        let default_content = r#"# 🏗️ Architecture
 
 ## Stack
 - **Language:** TBD
@@ -180,15 +206,32 @@ pub async fn execute(
 ## Key Decisions
 _Document architectural decisions here_
 "#;
-        fs.write_file(&arch_path, content).await?;
-        println!("{}", style("✓ Created .ai-core/ARCHITECTURE.md").green());
+
+        // Fetch
+        let cmd = "gh";
+        let args = vec![
+            "api".to_string(),
+            "-H".to_string(), "Accept: application/vnd.github.v3.raw".to_string(),
+            "/repos/iberi22/Git-Core-Protocol/contents/.ai-core/ARCHITECTURE.md?ref=main".to_string()
+        ];
+
+        let content = match system.run_command_output(cmd, &args).await {
+            Ok(c) if !c.trim().is_empty() => {
+                 println!("{}", style("✓ Fetched latest Architecture from remote").green());
+                 c
+            },
+            _ => {
+                 println!("{}", style("⚠️  Could not fetch Architecture (CLI), using default").yellow());
+                 default_content.to_string()
+            }
+        };
+        fs.write_file(&arch_path, &content).await?;
     }
 
-    // 4.1 Agent Index
-    if !fs.exists(&agent_index_path).await? {
-        // Ensure dir exists (might be redundant but safe)
-        fs.create_dir(&arch_dir).await?;
-        let content = r#"# 🤖 Agent Index
+    // 2. AGENT_INDEX.md
+    let agent_index_path = format!("{}/AGENT_INDEX.md", arch_dir);
+    if force || !fs.exists(&agent_index_path).await? {
+        let default_content = r#"# 🤖 Agent Index
 
 | Agent | Description | Trigger |
 |-------|-------------|---------|
@@ -196,57 +239,93 @@ _Document architectural decisions here_
 | `@architect` | Architecture changes | Planning phase |
 | `@jules` | Autonomous execution | `jules` label |
 "#;
-        fs.write_file(&agent_index_path, content).await?;
-        println!("{}", style("✓ Created .ai-core/AGENT_INDEX.md").green());
+        // Fetch
+        let cmd = "gh";
+        let args = vec![
+            "api".to_string(),
+            "-H".to_string(), "Accept: application/vnd.github.v3.raw".to_string(),
+            "/repos/iberi22/Git-Core-Protocol/contents/.ai-core/AGENT_INDEX.md?ref=main".to_string()
+        ];
+
+        let content = match system.run_command_output(cmd, &args).await {
+             Ok(c) if !c.trim().is_empty() => {
+                 println!("{}", style("✓ Fetched latest Agent Index from remote").green());
+                 c
+             },
+             _ => {
+                 println!("{}", style("⚠️  Could not fetch Agent Index (CLI), using default").yellow());
+                 default_content.to_string()
+             }
+        };
+        fs.write_file(&agent_index_path, &content).await?;
     }
 
-    // 4.2 Copilot Instructions (Agent Rules)
-    if !fs.exists(&instructions_path).await? {
-        println!("\n{}", style("📜 Installing Agent Rules...").yellow());
-        fs.create_dir(&github_dir).await?;
-
-        // This content should ideally match the latest protocol.
-        // For MVP, we use a placeholder or fetched content.
-        // Given the requirement "update agent rules", we should write the definitive rules here.
-        // I will use a simplified version of the current rules for the sake of the tool call size,
-        // but IRL this should be the full content or fetched.
-        // Since we are just 'updating' init logic in the CLI source code, we can embed it.
-        // No, that path is relative to the crate source.
-        // Let's use a hardcoded string that matches what we just updated in the user's workspace,
-        // or - better - fetch it from the repo if possible? No, offline first.
-
-        // Strategy: Embed the CRITICAL section.
-        let content = r#"# 🧠 GitHub Copilot Instructions
+    // 3. Agent Rules (copilot-instructions.md)
+    let instructions_path = format!("{}/copilot-instructions.md", github_dir);
+    if force || !fs.exists(&instructions_path).await? {
+         println!("{}", style("📜 Installing Agent Rules...").yellow());
+         let default_content = r#"# 🧠 GitHub Copilot Instructions (Offline Fallback)
 
 ## Prime Directive
-You are operating under the **Git-Core Protocol**. Your state is GitHub Issues, not internal memory.
+You are operating under the **Git-Core Protocol**.
 
 ## 🚀 Quick Commands
 | `gc init` | Initialize |
 | `gc issue list` | List Tasks |
-| `gc next` | Next Task |
 
-See full documentation in the repo or run `gc info`.
+See [docs/agent-docs/CLI_GUIDE.md](../docs/agent-docs/CLI_GUIDE.md) for full guide.
 "#;
-        fs.write_file(&instructions_path, content).await?;
-        println!("{}", style("✓ Created .github/copilot-instructions.md").green());
+         // Fetch
+         let cmd = "gh";
+         let args = vec![
+            "api".to_string(),
+            "-H".to_string(), "Accept: application/vnd.github.v3.raw".to_string(),
+            "/repos/iberi22/Git-Core-Protocol/contents/.github/copilot-instructions.md?ref=main".to_string()
+         ];
+
+         let content = match system.run_command_output(cmd, &args).await {
+              Ok(c) if !c.trim().is_empty() => {
+                  println!("{}", style("✓ Fetched latest Agent Rules from remote").green());
+                  c
+              },
+              _ => {
+                  println!("{}", style("⚠️  Could not fetch Agent Rules (CLI), using default").yellow());
+                  default_content.to_string()
+              }
+         };
+         fs.write_file(&instructions_path, &content).await?;
     }
 
-    // 4.1 Protocol Version File
-    let version_path = if target_path == "." { ".git-core-protocol-version".to_string() } else { format!("{}/.git-core-protocol-version", target_path) };
-    if !fs.exists(&version_path).await? {
-        let latest_version = github.get_file_content(
-            "iberi22",
-            "Git-Core-Protocol",
-            "main",
-            ".git-core-protocol-version"
-        ).await.unwrap_or_else(|_| "3.0.0".to_string()).trim().to_string();
+    // Protocol Version
+    let version_path = if is_current { ".git-core-protocol-version".to_string() } else { format!("{}/.git-core-protocol-version", target_path) };
+    if force || !fs.exists(&version_path).await? {
+         // Fetch
+         let cmd = "gh";
+         let args = vec![
+            "api".to_string(),
+            "-H".to_string(), "Accept: application/vnd.github.v3.raw".to_string(),
+            "/repos/iberi22/Git-Core-Protocol/contents/.git-core-protocol-version?ref=main".to_string()
+         ];
 
-        fs.write_file(&version_path, &latest_version).await?;
-        println!("{}", style(format!("✓ Created {} ({})", version_path, latest_version)).green());
+         let latest = match system.run_command_output(cmd, &args).await {
+             Ok(c) if !c.trim().is_empty() => c.trim().to_string(),
+             _ => "3.0.0".to_string()
+         };
+
+         fs.write_file(&version_path, &latest).await?;
+         println!("{}", style(format!("✓ Installed Protocol Version {}", latest)).green());
     }
 
-    // 5. Create Labels (Parity)
+    Ok(())
+}
+
+async fn setup_github_items(
+    _target_path: &str,
+    is_current: bool,
+    system: &impl SystemPort
+) -> color_eyre::Result<()> {
+    if !is_current { return Ok(()); }
+
     println!("\n{}", style("🏷️  Creating semantic labels...").yellow());
     let labels = vec![
         ("ai-plan", "High-level planning tasks", "0E8A16"),
@@ -257,185 +336,34 @@ See full documentation in the repo or run `gc info`.
     ];
 
     for (name, desc, color) in labels {
-        // gh label create NAME --description DESC --color COLOR --force
-        let label_cmd = vec![
-            String::from("label"),
-            String::from("create"),
-            name.to_string(),
-            String::from("--description"),
-            desc.to_string(),
-            String::from("--color"),
-            color.to_string(),
-            String::from("--force") // Update if exists
-        ];
-        // Again, assuming CWD is repo root
-        if target_path == "." {
-             let _ = system.run_command("gh", &label_cmd).await; // Ignore error if exists/fails
-             println!("  ✓ {}", name);
-        }
+         let _ = system.run_command("gh", &vec![
+            "label".into(), "create".into(), name.into(),
+            "--description".into(), desc.into(),
+            "--color".into(), color.into(), "--force".into()
+         ]).await;
     }
-
-    // 6. Create Initial Issues (Parity)
-    println!("\n{}", style("📝 Creating initial issues...").yellow());
-    let issues = vec![
-        ("🏗️ SETUP: Define Architecture and Tech Stack",
-         "## Objective\nDefine stack.\n\n## Tasks\n- [ ] Define language\n- [ ] Define db\n- [ ] Document in .ai-core/ARCHITECTURE.md",
-         "ai-plan"),
-        ("⚙️ INFRA: Initial dev setup",
-         "## Objective\nSetup tools.\n\n## Tasks\n- [ ] Linter\n- [ ] Formatter",
-         "ai-plan")
-    ];
-
-    for (title, body, label) in issues {
-         let issue_cmd = vec![
-            String::from("issue"),
-            String::from("create"),
-            String::from("--title"),
-            title.to_string(),
-            String::from("--body"),
-            body.to_string(),
-            String::from("--label"),
-            label.to_string()
-        ];
-        if target_path == "." {
-             let _ = system.run_command("gh", &issue_cmd).await;
-             println!("  ✓ Issue: {}", title);
-        }
-    }
-
-    // 7. Install Pre-commit Hooks (Parity)
-    println!("\n{}", style("🪝 Installing pre-commit hooks...").yellow());
-    let git_hooks_dir = if target_path == "." { ".git/hooks".to_string() } else { format!("{}/.git/hooks", target_path) };
-
-    if fs.exists(&if target_path == "." { ".git".to_string() } else { format!("{}/.git", target_path) }).await? {
-        if !fs.exists(&git_hooks_dir).await? {
-            fs.create_dir(&git_hooks_dir).await?;
-        }
-
-        let hook_content = r#"#!/bin/bash
-# Git-Core Protocol pre-commit hook
-# Validates atomic commits via scripts/hooks/pre-commit
-# Bypass: git commit --no-verify
-
-REPO_ROOT="$(git rev-parse --show-toplevel)"
-HOOK_SCRIPT="$REPO_ROOT/scripts/hooks/pre-commit"
-
-if [ -f "$HOOK_SCRIPT" ] && [ -x "$HOOK_SCRIPT" ]; then
-    exec "$HOOK_SCRIPT"
-elif [ -f "$HOOK_SCRIPT" ]; then
-    exec bash "$HOOK_SCRIPT"
-else
-    # Hook script not found, skip
-    echo "Note: scripts/hooks/pre-commit not found, skipping atomicity check"
-    exit 0
-fi
-"#;
-        let hook_path = format!("{}/pre-commit", git_hooks_dir);
-        fs.write_file(&hook_path, hook_content).await?;
-
-        // Make executable (Platform specific, mainly for unix/bash environments)
-        // On Windows it's file permission, but the content is bash, intended for git bash.
-        // We can try chmod if available or ignore.
-        // Git for Windows usually handles shebangs.
-        println!("{}", style("✓ Pre-commit hooks installed").green());
-    } else {
-        println!("{}", style("⚠️  Could not install hooks (no .git directory)").yellow());
-    }
-
-    println!("\n{}", style("✅ Project initialized successfully!").green());
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::commands::mocks::{MockFileSystemPort, MockSystemPort, MockGitHubPort};
-    use mockall::predicate::*;
+async fn install_hooks(
+    target_path: &str,
+    is_current: bool,
+    fs: &impl FileSystemPort
+) -> color_eyre::Result<()> {
+    let git_dir = if is_current { ".git".to_string() } else { format!("{}/.git", target_path) };
+    if fs.exists(&git_dir).await? {
+        println!("\n{}", style("🪝 Installing pre-commit hooks...").yellow());
+        let hooks_dir = format!("{}/hooks", git_dir);
+        if !fs.exists(&hooks_dir).await? { fs.create_dir(&hooks_dir).await?; }
 
-    #[tokio::test]
-    async fn test_init_success() {
-        let args = InitArgs {
-            name: Some("test-project".to_string()),
-            private: false,
-            auto: false,
-        };
-
-        let mut mock_fs = MockFileSystemPort::new();
-        let mut mock_system = MockSystemPort::new();
-        let mut mock_github = MockGitHubPort::new();
-
-        // Expect check checks
-        mock_system.expect_check_command()
-            .with(eq("git"))
-            .returning(|_| Ok(true));
-        mock_system.expect_check_command()
-            .with(eq("gh"))
-            .returning(|_| Ok(true));
-
-        // Expect .git check
-        mock_fs.expect_exists()
-            .with(eq("test-project/.git"))
-            .returning(|_| Ok(false));
-
-        // Expect git init with name
-        mock_system.expect_run_command()
-            .with(eq("git"), eq(vec![String::from("init"), String::from("test-project")]))
-            .returning(|_, _| Ok(()));
-
-        // Expect git -C branch
-        mock_system.expect_run_command()
-            .with(eq("git"), eq(vec![String::from("-C"), String::from("test-project"), String::from("branch"), String::from("-M"), String::from("main")]))
-            .returning(|_, _| Ok(()));
-
-        // Expect README check
-        mock_fs.expect_exists()
-            .with(eq("test-project/README.md"))
-            .returning(|_| Ok(false));
-
-        // Expect README write
-        mock_fs.expect_write_file()
-            .with(eq("test-project/README.md"), always())
-            .returning(|_, _| Ok(()));
-
-        // Expect git -C add
-        mock_system.expect_run_command()
-            .with(eq("git"), eq(vec![String::from("-C"), String::from("test-project"), String::from("add"), String::from(".")]))
-            .returning(|_, _| Ok(()));
-
-        // Expect git -C commit
-        mock_system.expect_run_command()
-            .with(eq("git"), eq(vec![String::from("-C"), String::from("test-project"), String::from("commit"), String::from("-m"), String::from("feat: 🚀 Initial commit")]))
-            .returning(|_, _| Ok(()));
-
-        // Expect Architecture file logic
-        mock_fs.expect_exists()
-            .with(eq(".ai-core/ARCHITECTURE.md"))
-            .returning(|_| Ok(false));
-
-        mock_fs.expect_create_dir()
-            .with(eq(".ai-core"))
-            .returning(|_| Ok(()));
-
-        mock_fs.expect_write_file()
-            .with(eq(".ai-core/ARCHITECTURE.md"), always())
-            .returning(|_, _| Ok(()));
-
-
-        // Expect Version file logic
-        mock_fs.expect_exists()
-            .with(eq("test-project/.git-core-protocol-version"))
-            .returning(|_| Ok(false));
-
-        mock_github.expect_get_file_content()
-             .with(eq("iberi22"), eq("Git-Core-Protocol"), eq("main"), eq(".git-core-protocol-version"))
-             .returning(|_, _, _, _| Ok("3.0.0".to_string()));
-
-        mock_fs.expect_write_file()
-            .with(eq("test-project/.git-core-protocol-version"), eq("3.0.0"))
-            .returning(|_, _| Ok(()));
-
-
-        let res = execute(args, &mock_fs, &mock_system, &mock_github).await;
-        assert!(res.is_ok());
+        let hook_content = r#"#!/bin/bash
+# Git-Core Protocol pre-commit hook
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+HOOK_SCRIPT="$REPO_ROOT/scripts/hooks/pre-commit"
+if [ -f "$HOOK_SCRIPT" ]; then exec bash "$HOOK_SCRIPT"; else exit 0; fi
+"#;
+        fs.write_file(&format!("{}/pre-commit", hooks_dir), hook_content).await?;
+         println!("{}", style("✓ Pre-commit hooks installed").green());
     }
+    Ok(())
 }

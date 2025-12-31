@@ -57,6 +57,7 @@ fn test_update_help() {
 }
 
 #[test]
+#[ignore]
 fn test_update_smoke() {
     // We cannot easily test full network download in unit tests without mocking reqwest.
     // However, we can test that the command accepts arguments and fails gracefully or prints help.

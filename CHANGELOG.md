@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.0] - 2025-12-31 🧠 "Architecture Intelligence"
+
+### Added
+
+- **🧠 Architecture Analysis Engine**:
+    - New `gc analyze` CLI command for instant project context auditing.
+    - Generates AI-optimized prompts in `docs/prompts/ARCHITECTURE_REVIEW_*.md` containing:
+        - Project file structure
+        - README, AGENTS.md, ARCHITECTURE.md content
+        - Key script contents
+    - PowerShell fallback `scripts/analyze-architecture.ps1` for environments without CLI.
+
+- **🚀 Installer Improvements**:
+    - `install.ps1` now displays dynamic version from protocol file.
+    - Added "Analyze Architecture" option to interactive installer menu.
+
+### Changed
+
+- **CLI**: `gc` CLI now supports `analyze` subcommand with `--target-path` support.
+- **Protocol**: Version bumped to 3.4.0.
+
+
 ## [3.3.0] - 2025-12-13 🧹 "Workflow Cleanup & Documentation"
 
 ### Changed

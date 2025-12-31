@@ -8,7 +8,7 @@ pub struct Cli {
 }
 
 mod commands;
-use commands::{InitArgs, ContextCmd, ReportCmd, ValidateCmd, TelemetryArgs, CiDetectArgs, TaskArgs, FinishArgs, IssueArgs, PrArgs, GitArgs, InfoArgs, CheckArgs, NextArgs, WorkflowArgs, UpdateArgs, DispatchArgs};
+use commands::{InitArgs, ContextCmd, ReportCmd, ValidateCmd, TelemetryArgs, CiDetectArgs, TaskArgs, FinishArgs, IssueArgs, PrArgs, GitArgs, InfoArgs, CheckArgs, NextArgs, WorkflowArgs, UpdateArgs, DispatchArgs, AnalyzeArgs};
 
 #[derive(Subcommand)]
 pub enum Commands {
@@ -50,7 +50,10 @@ pub enum Commands {
     /// Upgrade Protocol in current project
     Update(UpdateArgs),
     /// Dispatch task to Agent (Jules, Copilot)
+    /// Dispatch task to Agent (Jules, Copilot)
     Dispatch(DispatchArgs),
+    /// Analyze Architecture & Generate Prompt
+    Analyze(AnalyzeArgs),
 }
 
 #[tokio::main]
@@ -146,6 +149,9 @@ async fn main() -> color_eyre::Result<()> {
             let jules = gc_adapter_cli::CliJulesAdapter;
             let copilot = gc_adapter_cli::CliCopilotAdapter;
             commands::dispatch::execute(args, &git, &jules, &copilot).await?;
+        }
+        Commands::Analyze(args) => {
+            commands::analyze::execute(args).await?;
         }
     }
 

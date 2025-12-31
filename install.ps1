@@ -16,7 +16,7 @@ $RAW_URL = "https://raw.githubusercontent.com/iberi22/Git-Core-Protocol/main"
 $TEMP_DIR = ".git-core-temp"
 $BACKUP_DIR = ".git-core-backup"
 
-Write-Host "🧠 Git-Core Protocol - Remote Installer v1.4.0" -ForegroundColor Cyan
+Write-Host "🧠 Git-Core Protocol - Remote Installer" -ForegroundColor Cyan
 Write-Host "==============================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -215,6 +215,7 @@ if ($hasFiles -and -not $AutoMode) {
     Write-Host "  1) Continue and merge files"
     Write-Host "  2) Organize existing files first"
     Write-Host "  3) Cancel"
+    Write-Host "  4) 🧠 Analyze Architecture & Generate Copilot Prompt"
     Write-Host ""
     $choice = Read-Host "Select (1/2/3)"
 
@@ -222,6 +223,15 @@ if ($hasFiles -and -not $AutoMode) {
         "1" { Write-Host "Continuing..." }
         "2" { Invoke-OrganizeFiles }
         "3" { Write-Host "Cancelled."; exit 0 }
+        "4" {
+             if (Test-Path "scripts/analyze-architecture.ps1") {
+                 & "scripts/analyze-architecture.ps1"
+                 exit 0
+             } else {
+                 Write-Host "❌ Script not found. Please run Option 1 to install/upgrade first." -ForegroundColor Red
+                 exit 1
+             }
+        }
         default { Write-Host "Invalid option."; exit 1 }
     }
 }
